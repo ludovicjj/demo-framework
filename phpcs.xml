@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<ruleset name="Custom Standard">
+    <description>A custom coding standard</description>
+    <arg name="colors"/>
+    <arg value="p"/>
+
+    <file>src</file>
+    <file>app</file>
+    <file>public/index.php</file>
+
+
+    <rule ref="PSR2">
+
+    </rule>
+</ruleset>
