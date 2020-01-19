@@ -1,0 +1,1 @@
+Le nom de la template est <?= $name; ?>

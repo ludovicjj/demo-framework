@@ -7,9 +7,17 @@ use function Http\Response\send;
 
 require '../vendor/autoload.php';
 
-$app = new App([
-    BlogModule::class
-]);
+$renderer = new \App\Framework\Renderer\PHPRenderer();
+$renderer->addPath(dirname(__DIR__).'/views');
+
+$app = new App(
+    [
+        BlogModule::class
+    ],
+    [
+        'renderer' => $renderer
+    ]
+);
 
 $response = $app->run(ServerRequest::fromGlobals());
 send($response);

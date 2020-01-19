@@ -1,0 +1,1 @@
+<h1>Ma super template</h1>
