@@ -5,7 +5,6 @@
     <arg value="p"/>
 
     <file>src</file>
-    <file>app</file>
     <file>public/index.php</file>
 
 
