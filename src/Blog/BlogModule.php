@@ -2,31 +2,31 @@
 
 namespace App\Blog;
 
-use App\Framework\Renderer\PHPRenderer;
+use App\Framework\Renderer\RendererInterface;
 use Framework\Router\Router;
 use Psr\Http\Message\ServerRequestInterface;
 
 class BlogModule
 {
-    /** @var PHPRenderer */
+    /** @var RendererInterface */
     private $renderer;
 
-    public function __construct(Router $router, PHPRenderer $renderer)
+    public function __construct(Router $router, RendererInterface $renderer)
     {
         $this->renderer = $renderer;
         $router->get('/blog', [$this, 'index'], 'blog.index');
-        $router->get('/blog/{slug:[a-z\-]+}', [$this, 'show'], 'blog.show');
+        $router->get('/blog/{slug:[a-z0-9\-]+}', [$this, 'show'], 'blog.show');
     }
 
     public function index(ServerRequestInterface $request): string
     {
-        return $this->renderer->render('blog/index.php');
+        return $this->renderer->render('blog/index.html.twig');
     }
 
     public function show(ServerRequestInterface $request): string
     {
         return $this->renderer->render(
-            'blog/show.php',
+            'blog/show.html.twig',
             [
                 'slug' => $request->getAttribute('slug')
             ]

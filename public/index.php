@@ -7,8 +7,7 @@ use function Http\Response\send;
 
 require '../vendor/autoload.php';
 
-$renderer = new \App\Framework\Renderer\PHPRenderer();
-$renderer->addPath(dirname(__DIR__).'/views');
+$renderer = new \App\Framework\Renderer\TwigRenderer(dirname(__DIR__).'/views');
 
 $app = new App(
     [

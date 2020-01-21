@@ -12,8 +12,7 @@ class PHPRendererTest extends TestCase
 
     public function setUp(): void
     {
-        $this->renderer = new PHPRenderer();
-        $this->renderer->addPath(dirname(__DIR__).'/views');
+        $this->renderer = new PHPRenderer(dirname(__DIR__).'/views');
     }
 
     public function testRenderWithoutNamespace()

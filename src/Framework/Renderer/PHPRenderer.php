@@ -2,7 +2,7 @@
 
 namespace App\Framework\Renderer;
 
-class PHPRenderer
+class PHPRenderer implements RendererInterface
 {
     const DEFAULT_NAMESPACE = 'MAIN__';
 
@@ -11,6 +11,13 @@ class PHPRenderer
 
     /** @var array */
     private $globals = [];
+
+    public function __construct(?string $defaultPath = null)
+    {
+        if (!\is_null($defaultPath)) {
+            $this->addPath($defaultPath);
+        }
+    }
 
     /**
      * Ajoute un chemin vers les vues
@@ -22,8 +29,9 @@ class PHPRenderer
     {
         if ($namespace === self::DEFAULT_NAMESPACE) {
             $this->paths[self::DEFAULT_NAMESPACE] = $path;
+        } else {
+            $this->paths[$namespace] = $path;
         }
-        $this->paths[$namespace] = $path;
     }
 
     /**
