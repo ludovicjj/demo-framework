@@ -10,6 +10,10 @@ class BlogModule extends Module
 {
     const DEFINITIONS = __DIR__.'/config.php';
 
+    const MIGRATIONS = __DIR__ . '/phinx/migrations';
+
+    const SEEDS = __DIR__ . '/phinx/seeds';
+
     public function __construct(
         string $prefix,
         Router $router

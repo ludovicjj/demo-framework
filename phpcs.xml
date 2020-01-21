@@ -4,11 +4,13 @@
     <arg name="colors"/>
     <arg value="p"/>
 
-    <file>src</file>
-    <file>public/index.php</file>
+    <file>./src</file>
+    <file>./public/index.php</file>
 
 
-    <rule ref="PSR2">
-
+    <rule ref="PSR2"/>
+    <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
+        <exclude-pattern>*/phinx/migrations/*</exclude-pattern>
+        <exclude-pattern>*/phinx/seeds/*</exclude-pattern>
     </rule>
 </ruleset>

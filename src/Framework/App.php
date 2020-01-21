@@ -82,6 +82,14 @@ class App
     }
 
     /**
+     * @return ContainerInterface
+     */
+    public function getContainer(): ContainerInterface
+    {
+        return $this->container;
+    }
+
+    /**
      * @param mixed $callback
      * @param ServerRequestInterface $request
      * @return string|ResponseInterface
