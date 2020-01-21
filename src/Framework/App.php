@@ -4,6 +4,7 @@ namespace Framework;
 
 use Framework\Router\Router;
 use GuzzleHttp\Psr7\Response;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -12,22 +13,21 @@ class App
     /** @var array */
     private $modules = [];
 
-    /** @var Router */
-    private $router;
+    /** @var ContainerInterface */
+    private $container;
 
     /**
      * App constructor.
-     * @param string[] $modules
-     * @param array $dependencies
+     * @param ContainerInterface $container
+     * @param array $modules
      */
-    public function __construct(array $modules = [], array $dependencies = [])
-    {
-        $this->router = new Router();
-        if (array_key_exists('renderer', $dependencies)) {
-            $dependencies['renderer']->addGlobal('router', $this->router);
-        }
+    public function __construct(
+        ContainerInterface $container,
+        array $modules = []
+    ) {
+        $this->container = $container;
         foreach ($modules as $module) {
-            $this->modules[] = new $module($this->router, $dependencies['renderer']);
+            $this->modules[] = $container->get($module);
         }
     }
 
@@ -49,7 +49,9 @@ class App
             return $response;
         }
 
-        $route = $this->router->match($request);
+        //Todo recuperation du router via le container
+        $router = $this->container->get(Router::class);
+        $route = $router->match($request);
 
         //TODO case : request doesn't match, return Response 404
         if (\is_null($route)) {
@@ -66,7 +68,8 @@ class App
             $request
         );
 
-        $response = call_user_func_array($route->getCallback(), [$request]);
+        //Todo initialise le callback
+        $response = $this->initCallback($route->getCallback(), $request);
 
         //TODO case : Vérifie le type de la response
         if (is_string($response)) {
@@ -76,5 +79,35 @@ class App
         } else {
             throw new \Exception('Response must be string or instance of ResponseInterface');
         }
+    }
+
+    /**
+     * @param mixed $callback
+     * @param ServerRequestInterface $request
+     * @return string|ResponseInterface
+     * @throws \Exception
+     */
+    private function initCallback($callback, ServerRequestInterface $request)
+    {
+        if (\is_string($callback)) {
+            return call_user_func_array($this->container->get($callback), [$request]);
+        }
+
+        if (\is_array($callback) && \is_string($callback[0])) {
+            $object = $this->container->get($callback[0]);
+            $method = $callback[1];
+            if (method_exists($object, $method)) {
+                return call_user_func_array([$object, $method], [$request]);
+            } else {
+                throw new \Exception(
+                    sprintf(
+                        'Method %s() doesn\'t exist in class name : %s',
+                        $method,
+                        get_class($object)
+                    )
+                );
+            }
+        }
+        return call_user_func_array($callback, [$request]);
     }
 }

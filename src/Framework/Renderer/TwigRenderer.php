@@ -2,19 +2,19 @@
 
 namespace App\Framework\Renderer;
 
+use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
 class TwigRenderer implements RendererInterface
 {
     const DEFAULT_NAMESPACE = 'MAIN__';
 
-    /** @var \Twig\Environment */
+    /** @var Environment */
     private $twig;
 
-    public function __construct(string $defaultPath)
+    public function __construct(Environment $twig)
     {
-        $loader = new FilesystemLoader($defaultPath);
-        $this->twig = new \Twig\Environment($loader, []);
+        $this->twig = $twig;
     }
 
     /**

@@ -2,34 +2,19 @@
 
 namespace App\Blog;
 
-use App\Framework\Renderer\RendererInterface;
+use App\Blog\Actions\BlogAction;
+use App\Framework\Module;
 use Framework\Router\Router;
-use Psr\Http\Message\ServerRequestInterface;
 
-class BlogModule
+class BlogModule extends Module
 {
-    /** @var RendererInterface */
-    private $renderer;
+    const DEFINITIONS = __DIR__.'/config.php';
 
-    public function __construct(Router $router, RendererInterface $renderer)
-    {
-        $this->renderer = $renderer;
-        $router->get('/blog', [$this, 'index'], 'blog.index');
-        $router->get('/blog/{slug:[a-z0-9\-]+}', [$this, 'show'], 'blog.show');
-    }
-
-    public function index(ServerRequestInterface $request): string
-    {
-        return $this->renderer->render('blog/index.html.twig');
-    }
-
-    public function show(ServerRequestInterface $request): string
-    {
-        return $this->renderer->render(
-            'blog/show.html.twig',
-            [
-                'slug' => $request->getAttribute('slug')
-            ]
-        );
+    public function __construct(
+        string $prefix,
+        Router $router
+    ) {
+        $router->get($prefix, [BlogAction::class, 'index'], 'blog.index');
+        $router->get($prefix . '/{slug:[a-z0-9\-]+}', [BlogAction::class, 'show'], 'blog.show');
     }
 }

@@ -7,15 +7,22 @@ use function Http\Response\send;
 
 require '../vendor/autoload.php';
 
-$renderer = new \App\Framework\Renderer\TwigRenderer(dirname(__DIR__).'/views');
+$modules = [
+    BlogModule::class
+];
+
+$builder = new \DI\ContainerBuilder();
+$builder->addDefinitions(dirname(__DIR__).'/config/config.php');
+foreach ($modules as $module) {
+    if (!\is_null($module::DEFINITIONS)) {
+        $builder->addDefinitions($module::DEFINITIONS);
+    }
+}
+$container = $builder->build();
 
 $app = new App(
-    [
-        BlogModule::class
-    ],
-    [
-        'renderer' => $renderer
-    ]
+    $container,
+    $modules
 );
 
 $response = $app->run(ServerRequest::fromGlobals());
