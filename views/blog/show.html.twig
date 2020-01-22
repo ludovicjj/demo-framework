@@ -3,6 +3,7 @@
 {% block title slug %}
 
 {% block body %}
-    <h1>Bienvenue sur l'article {{ slug }}</h1>
+    <h1 class="mb-4">{{ post.name }}</h1>
+    <p>{{ post.content| nl2br }}</p>
 
 {% endblock %}

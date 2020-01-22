@@ -19,6 +19,6 @@ class BlogModule extends Module
         Router $router
     ) {
         $router->get($prefix, [BlogAction::class, 'index'], 'blog.index');
-        $router->get($prefix . '/{slug:[a-z0-9\-]+}', [BlogAction::class, 'show'], 'blog.show');
+        $router->get($prefix . '/{slug:[a-z0-9\-]+}-{id:[0-9]+}', [BlogAction::class, 'show'], 'blog.show');
     }
 }
