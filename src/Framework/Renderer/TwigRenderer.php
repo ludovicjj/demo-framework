@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Framework\Renderer;
+namespace Framework\Renderer;
 
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;

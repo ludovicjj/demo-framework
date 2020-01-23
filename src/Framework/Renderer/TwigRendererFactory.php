@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Framework\Renderer;
+namespace Framework\Renderer;
 
 use Psr\Container\ContainerInterface;
 use Twig\Environment;

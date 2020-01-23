@@ -1,12 +1,16 @@
 <?php
 
-use App\Framework\Renderer\RendererInterface;
-use App\Framework\Renderer\TwigRendererFactory;
-use App\Framework\Twig\RouterExtension;
+use Framework\Renderer\RendererInterface;
+use Framework\Renderer\TwigRendererFactory;
+use Framework\Twig\PaginationExtension;
+use Framework\Twig\RouterExtension;
+use Framework\Twig\TextExtension;
 use Framework\Router\Router;
 use function DI\create;
 use function DI\factory;
 use function DI\get;
+use Framework\Twig\TimeExtension;
+
 
 return [
     'database.host' => 'localhost',
@@ -17,7 +21,10 @@ return [
     'database.charset' => 'utf8',
     'views.path' => dirname(__DIR__).'/views',
     'twig.extensions' => [
-        get(RouterExtension::class)
+        get(RouterExtension::class),
+        get(PaginationExtension::class),
+        get(TextExtension::class),
+        get(TimeExtension::class),
     ],
     Router::class => create(),
     RendererInterface::class => factory(TwigRendererFactory::class),

@@ -3,7 +3,7 @@
 namespace App\Blog;
 
 use App\Blog\Actions\BlogAction;
-use App\Framework\Module;
+use Framework\Module;
 use Framework\Router\Router;
 
 class BlogModule extends Module

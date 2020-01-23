@@ -2,7 +2,7 @@
 
 namespace Framework;
 
-use App\Framework\Exceptions\NotFoundException;
+use Framework\Exceptions\NotFoundException;
 use Framework\Router\Router;
 use GuzzleHttp\Psr7\Response;
 use Psr\Container\ContainerInterface;
@@ -72,8 +72,12 @@ class App
         //Todo initialise la class et lance la method.
         try {
             $response = $this->initCallback($route->getCallback(), $request);
-        } catch (\Exception $exception) {
-            return new Response(404, [], '<h1>Erreur 404</h1><p>'. $exception->getMessage() .'</p>');
+        } catch (NotFoundException $notFoundException) {
+            return new Response(
+                404,
+                [],
+                '<h1>Erreur 404</h1><p>'. $notFoundException->getMessage() .'</p>'
+            );
         }
 
         //TODO case : Vérifie le type de la response

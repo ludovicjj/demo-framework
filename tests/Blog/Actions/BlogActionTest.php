@@ -3,9 +3,10 @@
 namespace Tests\Blog\Actions;
 
 use App\Blog\Actions\BlogAction;
+use App\Blog\Entity\Post;
 use App\Blog\Repository\PostRepository;
-use App\Framework\Exceptions\NotFoundException;
-use App\Framework\Renderer\RendererInterface;
+use Framework\Exceptions\NotFoundException;
+use Framework\Renderer\RendererInterface;
 use Framework\Router\Router;
 use GuzzleHttp\Psr7\ServerRequest;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -38,9 +39,9 @@ class BlogActionTest extends TestCase
         );
     }
 
-    public function makePost(int $id, string $slug): \stdClass
+    public function makePost(int $id, string $slug): Post
     {
-        $post =  new \stdClass();
+        $post =  new Post();
         $post->id = $id;
         $post->slug = $slug;
         return $post;

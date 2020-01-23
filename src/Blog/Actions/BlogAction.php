@@ -3,9 +3,9 @@
 namespace App\Blog\Actions;
 
 use App\Blog\Repository\PostRepository;
-use App\Framework\Exceptions\NotFoundException;
-use App\Framework\Renderer\RendererInterface;
-use App\Framework\Response\RedirectResponse;
+use Framework\Exceptions\NotFoundException;
+use Framework\Renderer\RendererInterface;
+use Framework\Response\RedirectResponse;
 use Framework\Router\Router;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -17,9 +17,7 @@ class BlogAction
     /** @var Router */
     private $router;
 
-    /**
-     * @var PostRepository
-     */
+    /** @var PostRepository */
     private $postRepository;
 
     /**
@@ -39,11 +37,15 @@ class BlogAction
     }
 
     /**
+     * @param ServerRequestInterface $request
      * @return string
+     * @throws NotFoundException
      */
-    public function index(): string
+    public function index(ServerRequestInterface $request): string
     {
-        $posts = $this->postRepository->findPaginated();
+        $param = $request->getQueryParams();
+        $page = $param['page'] ?? 1;
+        $posts = $this->postRepository->findPaginated(12, $page);
 
         return $this->renderer->render(
             'blog/index.html.twig',
