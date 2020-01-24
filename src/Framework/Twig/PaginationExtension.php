@@ -33,7 +33,8 @@ class PaginationExtension extends AbstractExtension
         $options = [
             'proximity' => 1,
             'prev_message' => '<i class="fas fa-angle-left"></i>',
-            'next_message' => '<i class="fas fa-angle-right"></i>'
+            'next_message' => '<i class="fas fa-angle-right"></i>',
+            'css_container_class' => 'pagination justify-content-center'
         ];
 
         $html = $view->render($paginatedItems, function (int $page) use ($routeName, $queryParams) {

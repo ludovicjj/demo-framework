@@ -70,7 +70,7 @@ class BlogActionTest extends TestCase
             ->withAttribute('slug', 'slug-test')
         ;
 
-        $this->postRepository->method('find')->willReturn(false);
+        $this->postRepository->method('find')->willReturn(null);
         $this->expectException(NotFoundException::class);
         call_user_func_array([$this->action, 'show'], [$request]);
     }

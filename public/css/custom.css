@@ -1,0 +1,9 @@
+.pagination>li>.page-link {
+    border: none;
+    color: #6c757d;
+    padding: .4rem .75rem;
+}
+.pagination>li.page-item.active>.page-link {
+    background-color: orange;
+    border-radius: 50%;
+}

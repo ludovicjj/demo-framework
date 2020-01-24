@@ -51,13 +51,13 @@ class PostRepository
 
     /**
      * @param int $id
-     * @return bool|Post
+     * @return null|Post
      */
-    public function find(int $id)
+    public function find(int $id): ?Post
     {
         $statement = $this->pdo->prepare('SELECT * FROM posts WHERE id = :id');
         $statement->execute(['id' => $id]);
         $statement->setFetchMode(\PDO::FETCH_CLASS, Post::class);
-        return $statement->fetch();
+        return $statement->fetch() ?: null;
     }
 }
