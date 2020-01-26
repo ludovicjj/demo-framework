@@ -2,9 +2,9 @@
 
 namespace Framework\Twig;
 
+use Framework\Database\Pagination\View\CustomView;
 use Framework\Router\Router;
 use Pagerfanta\Pagerfanta;
-use Pagerfanta\View\TwitterBootstrap4View;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -29,12 +29,13 @@ class PaginationExtension extends AbstractExtension
 
     public function paginate(Pagerfanta $paginatedItems, string $routeName, array $queryParams = [])
     {
-        $view = new TwitterBootstrap4View();
+        $view = new CustomView();
+
         $options = [
             'proximity' => 1,
+            'css_container_class' => 'pagination justify-content-center',
             'prev_message' => '<i class="fas fa-angle-left"></i>',
             'next_message' => '<i class="fas fa-angle-right"></i>',
-            'css_container_class' => 'pagination justify-content-center'
         ];
 
         $html = $view->render($paginatedItems, function (int $page) use ($routeName, $queryParams) {

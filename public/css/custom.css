@@ -1,9 +1,25 @@
-.pagination>li>.page-link {
-    border: none;
-    color: #6c757d;
-    padding: .4rem .75rem;
+.pagination>li.page-item {
+    margin: 0 .2rem;
 }
 .pagination>li.page-item.active>.page-link {
-    background-color: orange;
-    border-radius: 50%;
+    background-color: rgba(247, 137, 12, 1);
+    border: 1px solid rgba(247, 137, 12, 1);
+    border-radius: 10%;
+    color: #ffffff;
+}
+.pagination>li.page-item>.page-link {
+    color: rgba(247, 137, 12, 1);
+}
+/* focus */
+.pagination>li.page-item>.page-link:focus {
+    border-color: rgba(247, 137, 12, 0.4);
+    box-shadow: 0 0 8px rgba(247, 137, 12, 0.8);
+}
+/* hover */
+.pagination>li.page-item>.page-link:hover {
+    background: none;
+    border-color: rgba(247, 137, 12, 0.4);
+}
+.pagination>li.page-item.active>.page-link:hover {
+    background-color: rgba(247, 137, 12, 1);
 }
