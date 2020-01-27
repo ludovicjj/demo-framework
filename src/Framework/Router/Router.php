@@ -26,11 +26,50 @@ class Router
      *
      * @param string $uri
      * @param callable|string|array $callable
-     * @param string $name
+     * @param string|null $name
      */
-    public function get(string $uri, $callable, string $name)
+    public function get(string $uri, $callable, ?string $name = null)
     {
         $this->router->addRoute(new MezzioRoute($uri, new CallableMiddleware($callable), ['GET'], $name));
+    }
+
+    /**
+     * Enregistre une route avec la method POST.
+     *
+     * @param string $uri
+     * @param callable|string|array $callable
+     * @param string|null $name
+     */
+    public function post(string $uri, $callable, ?string $name = null)
+    {
+        $this->router->addRoute(new MezzioRoute($uri, new CallableMiddleware($callable), ['POST'], $name));
+    }
+
+    /**
+     * Enregistre une route avec la method DELETE.
+     *
+     * @param string $uri
+     * @param callable|string|array $callable
+     * @param string|null $name
+     */
+    public function delete(string $uri, $callable, ?string $name = null)
+    {
+        $this->router->addRoute(new MezzioRoute($uri, new CallableMiddleware($callable), ['DELETE'], $name));
+    }
+
+
+
+    public function crud(string $prefixUri, string $class, string $prefixName)
+    {
+        $this->get($prefixUri, [$class, 'index'], "$prefixName.index");
+
+        $this->get("$prefixUri/{id:[0-9]+}", [$class, 'edit'], "$prefixName.edit");
+        $this->post("$prefixUri/{id:[0-9]+}", [$class, 'edit']);
+
+        $this->get("$prefixUri/new", [$class, 'create'], "$prefixName.create");
+        $this->post("$prefixUri/new", [$class, 'create']);
+
+        $this->delete("$prefixUri/{id:[0-9]+}", [$class, 'delete'], "$prefixName.delete");
     }
 
     /**

@@ -30,9 +30,10 @@ class PaginationExtension extends AbstractExtension
     public function paginate(Pagerfanta $paginatedItems, string $routeName, array $queryParams = [])
     {
         $view = new CustomView();
+        $view->setRenderCustom(true);
 
         $options = [
-            'proximity' => 1,
+            'proximity' => 2,
             'css_container_class' => 'pagination justify-content-center',
             'prev_message' => '<i class="fas fa-angle-left"></i>',
             'next_message' => '<i class="fas fa-angle-right"></i>',

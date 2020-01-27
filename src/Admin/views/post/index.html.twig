@@ -1,0 +1,39 @@
+{% extends '@admin/base_admin.html.twig' %}
+{% block body %}
+    <h1 class="mb-5">Administration des articles</h1>
+
+    <p class="text-left">
+        <a class="btn btn-primary" href="{{ path('admin.posts.create') }}">Ajouter un article</a>
+    </p>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Titre</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+            {% set rows = rows + 1 %}
+            <tr>
+                <th scope="row">{{ rows }}</th>
+                <td>{{ item.name }}</td>
+                <td>
+                    <a class="btn btn-primary" href="{{ path('admin.posts.edit', {'id': item.id}) }}">
+                        Editer
+                    </a>
+                    <form action="{{ path('admin.posts.delete', {'id': item.id}) }}" method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr ?');">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button class="btn btn-danger">Supprimer</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {{ paginate(items, 'admin.posts.index') }}
+
+{% endblock %}

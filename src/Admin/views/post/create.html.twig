@@ -1,0 +1,10 @@
+{% extends '@admin/base_admin.html.twig' %}
+{% block body %}
+    <h1 class="mb-5">Ajouter un article</h1>
+
+    <form method="post" action="{{ path('admin.posts.create') }}">
+        {% include '@admin/post/form_post.html.twig' %}
+        <button class="btn btn-primary" type="submit">Ajouter</button>
+    </form>
+
+{% endblock %}

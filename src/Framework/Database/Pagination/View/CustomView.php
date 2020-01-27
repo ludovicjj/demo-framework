@@ -155,7 +155,11 @@ class CustomView
     private function renderCustomPages()
     {
         return $this->previous().
+            $this->first().
+            $this->dotsIfStartIsOver3().
             $this->pages().
+            $this->dotsIfEndIsUnder3ToLast().
+            $this->last().
             $this->next();
     }
 

@@ -41,6 +41,14 @@ class App
     {
         $uri = $request->getUri()->getPath();
 
+        //Todo update request method if key "_method" exist
+        $parseBody = $request->getParsedBody();
+        if (array_key_exists('_method', $parseBody) &&
+            in_array($parseBody['_method'], ['DELETE', 'PUT'])
+        ) {
+            $request = $request->withMethod($parseBody['_method']);
+        }
+
         //TODO case : trailingSlash
         if (!empty($uri) && $uri !== '/' && $uri[-1] === '/') {
             $response = (new Response())
