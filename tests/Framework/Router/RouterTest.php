@@ -17,7 +17,7 @@ class RouterTest extends TestCase
         $this->router = new Router();
     }
 
-    public function testRouterWithValidUri()
+    public function testRouterWithValidUri(): void
     {
         $request = new ServerRequest('GET', '/blog');
         $this->router->get(
@@ -31,7 +31,7 @@ class RouterTest extends TestCase
         $this->assertEquals('demo', call_user_func_array($route->getCallback(), [$request]));
     }
 
-    public function testRouterWithInvalidUri()
+    public function testRouterWithInvalidUri(): void
     {
         $request = new ServerRequest('GET', '/demo');
         $this->router->get(
@@ -43,7 +43,7 @@ class RouterTest extends TestCase
         $this->assertNull($route);
     }
 
-    public function testRouterWithParameters()
+    public function testRouterWithParameters(): void
     {
         $request = new ServerRequest('GET', '/blog/slug-post-4');
         $this->router->get(
@@ -58,7 +58,36 @@ class RouterTest extends TestCase
         $this->assertEquals(['slug' => 'slug-post', 'id' => 4], $route->getParameters());
     }
 
-    public function testGenerateUri()
+    public function testMethodAddRoute(): void
+    {
+        $requestWithMethodGet = new ServerRequest('GET', '/blog/slug-post-4');
+        $requestWithMethodPost = new ServerRequest('POST', '/blog/slug-post-4');
+
+        $this->router->addRoute(
+            '/blog/{slug:[a-z0-9\-]+}-{id:[0-9]+}',
+            function (ServerRequestInterface $request) { return 'demo'; },
+            ['GET', 'POST'],
+            'blog.show'
+        );
+        $routeToMethodGet = $this->router->match($requestWithMethodGet);
+        $routeToMethodPost = $this->router->match($requestWithMethodPost);
+
+        $this->assertEquals('blog.show', $routeToMethodGet->getName());
+        $this->assertEquals(['slug' => 'slug-post', 'id' => 4], $routeToMethodGet->getParameters());
+        $this->assertEquals(
+            'demo',
+            call_user_func_array($routeToMethodGet->getCallback(), [$requestWithMethodGet])
+        );
+
+        $this->assertEquals('blog.show', $routeToMethodPost->getName());
+        $this->assertEquals(['slug' => 'slug-post', 'id' => 4], $routeToMethodPost->getParameters());
+        $this->assertEquals(
+            'demo',
+            call_user_func_array($routeToMethodPost->getCallback(), [$requestWithMethodPost])
+        );
+    }
+
+    public function testGenerateUri(): void
     {
         $this->router->get(
             '/blog/{slug:[a-z0-9\-]+}-{id:[0-9]+}',
@@ -70,7 +99,7 @@ class RouterTest extends TestCase
         $this->assertEquals('/blog/test-slug-4', $uri);
     }
 
-    public function testGenerateUriWithQueryParams()
+    public function testGenerateUriWithQueryParams(): void
     {
         $this->router->get(
             '/blog/{slug:[a-z0-9\-]+}-{id:[0-9]+}',

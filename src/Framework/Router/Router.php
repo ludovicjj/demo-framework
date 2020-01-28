@@ -57,19 +57,38 @@ class Router
         $this->router->addRoute(new MezzioRoute($uri, new CallableMiddleware($callable), ['DELETE'], $name));
     }
 
-
-
-    public function crud(string $prefixUri, string $class, string $prefixName)
+    /**
+     * Enregistre une route avec une ou plusieur methods
+     *
+     * @param array $method
+     * @param string $uri
+     * @param callable|string|array $callable
+     * @param string|null $name
+     */
+    public function addRoute(string $uri, $callable, array $method, ?string $name = null)
     {
-        $this->get($prefixUri, [$class, 'index'], "$prefixName.index");
+        $this->router->addRoute(new MezzioRoute($uri, new CallableMiddleware($callable), $method, $name));
+    }
 
-        $this->get("$prefixUri/{id:[0-9]+}", [$class, 'edit'], "$prefixName.edit");
-        $this->post("$prefixUri/{id:[0-9]+}", [$class, 'edit']);
+    /**
+     * Method spécifique à l'app.
+     * Enregistre toutes les routes pour le CRUD des posts et des catégories.
+     * Favorisé les method générique : post(), get(), delete() ou addRoute()
+     *
+     * @param string $prefixUri
+     * @param string $className
+     * @param string $prefixName
+     */
+    public function crud(string $prefixUri, string $className, string $prefixName)
+    {
+        $this->get($prefixUri, [$className, 'index'], "$prefixName.index");
 
-        $this->get("$prefixUri/new", [$class, 'create'], "$prefixName.create");
-        $this->post("$prefixUri/new", [$class, 'create']);
+        $this->addRoute("$prefixUri/{id:[0-9]+}", [$className, 'edit'], ['GET', 'POST'], "$prefixName.edit");
 
-        $this->delete("$prefixUri/{id:[0-9]+}", [$class, 'delete'], "$prefixName.delete");
+        $this->get("$prefixUri/new", [$className, 'create'], "$prefixName.create");
+        $this->post("$prefixUri/new", [$className, 'create']);
+
+        $this->delete("$prefixUri/{id:[0-9]+}", [$className, 'delete'], "$prefixName.delete");
     }
 
     /**
