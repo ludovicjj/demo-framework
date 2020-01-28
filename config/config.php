@@ -2,15 +2,17 @@
 
 use Framework\Renderer\RendererInterface;
 use Framework\Renderer\TwigRendererFactory;
+use Framework\Session\PHPSession;
+use Framework\Session\SessionInterface;
+use Framework\Twig\FlashExtension;
 use Framework\Twig\PaginationExtension;
 use Framework\Twig\RouterExtension;
 use Framework\Twig\TextExtension;
+use Framework\Twig\TimeExtension;
 use Framework\Router\Router;
 use function DI\create;
 use function DI\factory;
 use function DI\get;
-use Framework\Twig\TimeExtension;
-
 
 return [
     'database.host' => 'localhost',
@@ -25,8 +27,10 @@ return [
         get(PaginationExtension::class),
         get(TextExtension::class),
         get(TimeExtension::class),
+        get(FlashExtension::class)
     ],
     Router::class => create(),
+    SessionInterface::class => create(PHPSession::class),
     RendererInterface::class => factory(TwigRendererFactory::class),
     PDO::class => function (\Psr\Container\ContainerInterface $container) {
         $dsn = 'mysql:dbname='. $container->get('database.name');

@@ -6,6 +6,7 @@ use App\Blog\Repository\PostRepository;
 use Framework\Renderer\RendererInterface;
 use Framework\Response\RedirectResponse;
 use Framework\Router\Router;
+use Framework\Session\FlashService;
 use Psr\Http\Message\ServerRequestInterface;
 use Framework\Exceptions\NotFoundException;
 
@@ -20,14 +21,19 @@ class AdminPostsAction
     /** @var Router */
     private $router;
 
+    /** @var FlashService */
+    private $flash;
+
     public function __construct(
         RendererInterface $renderer,
         PostRepository $postRepository,
-        Router $router
+        Router $router,
+        FlashService $flash
     ) {
         $this->renderer = $renderer;
         $this->postRepository = $postRepository;
         $this->router = $router;
+        $this->flash = $flash;
     }
 
     /**
@@ -49,7 +55,7 @@ class AdminPostsAction
             '@admin/post/index.html.twig',
             [
                 'items' => $items,
-                'rows' => ($page * $perPage) - $perPage
+                'rows' => ($page * $perPage) - $perPage,
             ]
         );
     }
@@ -70,6 +76,7 @@ class AdminPostsAction
             ]);
 
             $this->postRepository->insert($data);
+            $this->flash->add('success', 'L\'article a été ajouté');
 
             return new RedirectResponse(
                 $this->router->generateUri('admin.posts.index')
@@ -106,6 +113,7 @@ class AdminPostsAction
             ]);
 
             $this->postRepository->update($item->id, $data);
+            $this->flash->add('success', 'L\'article a été modifié');
 
             return new RedirectResponse(
                 $this->router->generateUri('admin.posts.index')
@@ -128,7 +136,6 @@ class AdminPostsAction
     public function delete(ServerRequestInterface $request): RedirectResponse
     {
         $item = $this->postRepository->find($request->getAttribute('id'));
-        $this->postRepository->delete($item->id);
         if (!$item) {
             throw new NotFoundException(
                 sprintf(
@@ -137,6 +144,8 @@ class AdminPostsAction
                 )
             );
         }
+        $this->postRepository->delete($item->id);
+        $this->flash->add('success', 'L\'article a été supprimé');
 
         return new RedirectResponse(
             $this->router->generateUri('admin.posts.index')

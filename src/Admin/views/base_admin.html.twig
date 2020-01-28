@@ -38,6 +38,18 @@
 </nav>
 
 <main role="main" class="container" style="padding-top: 50px;">
+
+    {#Message flash#}
+    {% if flash('success') %}
+        <div class="alert alert-success">
+            {{ flash('success') }}
+        </div>
+    {% elseif flash('error') %}
+        <div class="alert alert-danger">
+            {{ flash('error') }}
+        </div>
+    {% endif %}
+
     {% block body %}
     {% endblock %}
 </main><!-- /.container -->
