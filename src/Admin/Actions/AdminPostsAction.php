@@ -7,6 +7,7 @@ use Framework\Renderer\RendererInterface;
 use Framework\Response\RedirectResponse;
 use Framework\Router\Router;
 use Framework\Session\FlashService;
+use Framework\Validator\Validator;
 use Psr\Http\Message\ServerRequestInterface;
 use Framework\Exceptions\NotFoundException;
 
@@ -68,22 +69,39 @@ class AdminPostsAction
      */
     public function create(ServerRequestInterface $request)
     {
+        $errors = null;
+        $item = null;
+
         if ($request->getMethod() === 'POST') {
-            $data = $this->getFilterParseBody($request);
-            $data = array_merge($data, [
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s'),
-            ]);
+            $validator = $this->getValidator($request);
 
-            $this->postRepository->insert($data);
-            $this->flash->add('success', 'L\'article a été ajouté');
-
-            return new RedirectResponse(
-                $this->router->generateUri('admin.posts.index')
+            $data = array_merge(
+                $this->getFilterParseBody($request),
+                [
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s'),
+                ]
             );
+
+            if ($validator->isValid()) {
+                $this->postRepository->insert($data);
+                $this->flash->add('success', 'L\'article a été ajouté');
+
+                return new RedirectResponse(
+                    $this->router->generateUri('admin.posts.index')
+                );
+            }
+            $item = self::hydrateFormWithCurrentData($data, null);
+            $errors = $validator->getErrors();
         }
 
-        return $this->renderer->render('@admin/post/create.html.twig');
+        return $this->renderer->render(
+            '@admin/post/create.html.twig',
+            [
+                'errors' => $errors,
+                'item' => $item
+            ]
+        );
     }
 
     /**
@@ -96,6 +114,8 @@ class AdminPostsAction
     public function edit(ServerRequestInterface $request)
     {
         $item = $this->postRepository->find($request->getAttribute('id'));
+        $errors = null;
+        $itemName = $item->name;
 
         if (!$item) {
             throw new NotFoundException(
@@ -107,22 +127,29 @@ class AdminPostsAction
         }
 
         if ($request->getMethod() === 'POST') {
-            $data = $this->getFilterParseBody($request);
-            $data = array_merge($data, [
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
+            $validator = $this->getValidator($request);
 
-            $this->postRepository->update($item->id, $data);
-            $this->flash->add('success', 'L\'article a été modifié');
+            $data = array_merge($this->getFilterParseBody($request), ['updated_at' => date('Y-m-d H:i:s')]);
 
-            return new RedirectResponse(
-                $this->router->generateUri('admin.posts.index')
-            );
+            if ($validator->isValid()) {
+                $this->postRepository->update($item->id, $data);
+                $this->flash->add('success', 'L\'article a été modifié');
+
+                return new RedirectResponse(
+                    $this->router->generateUri('admin.posts.index')
+                );
+            }
+            $errors = $validator->getErrors();
+            $item = self::hydrateFormWithCurrentData($data, $item);
         }
 
         return $this->renderer->render(
             '@admin/post/edit.html.twig',
-            ['item' => $item]
+            [
+                'item' => $item,
+                'errors' => $errors,
+                'itemName' => $itemName
+            ]
         );
     }
 
@@ -153,6 +180,8 @@ class AdminPostsAction
     }
 
     /**
+     * Filtre des données du ParseBody de la request
+     *
      * @param ServerRequestInterface $request
      * @return array
      */
@@ -161,5 +190,44 @@ class AdminPostsAction
         return array_filter($request->getParsedBody(), function ($key) {
             return in_array($key, ['name', 'slug', 'content']);
         }, ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
+     * Initialise le Validator avec les constraintes
+     *
+     * @param ServerRequestInterface $request
+     * @return Validator
+     */
+    private function getValidator(ServerRequestInterface $request): Validator
+    {
+        return (new Validator($request->getParsedBody()))
+            ->required(
+                ['name' => 'name'],
+                ['name' => 'slug'],
+                ['name' => 'content']
+            )
+            ->length(
+                ['name' => 'content', 'min' => 10],
+                ['name' => 'name', 'min' => 3, 'max' => 50],
+                ['name' => 'slug', 'min' => 3, 'max' => 50]
+            )
+            ->slug(
+                ['name' => 'slug']
+            );
+    }
+
+    /**
+     * @param array $data
+     * @param object|null $entity
+     * @return array
+     */
+    private static function hydrateFormWithCurrentData(array $data, ?object $entity): array
+    {
+        if (!\is_null($entity) && \is_object($entity) && property_exists($entity, 'id')) {
+            $data['id'] = $entity->id;
+            return $data;
+        }
+
+        return $data;
     }
 }

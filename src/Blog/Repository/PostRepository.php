@@ -74,7 +74,7 @@ class PostRepository
     {
         $fieldQuery = $this->buildFieldQuery($data);
         $data['id'] = $entityId;
-        $statement = $this->pdo->prepare("UPDATE posts SET $fieldQuery WHERE id = :id");
+        $statement = $this->pdo->prepare("UPDATE posts SET $fieldQuery WHERE id=:id");
         return $statement->execute($data);
     }
 
@@ -111,7 +111,7 @@ class PostRepository
     private function buildFieldQuery(array $data): string
     {
         $arrayData =  array_map(function ($key) {
-            return "$key = :$key";
+            return "$key=:$key";
         }, array_keys($data));
 
         return join(', ', $arrayData);
