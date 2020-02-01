@@ -202,7 +202,8 @@ class AdminPostsAction
             ->required(
                 ['name' => 'name'],
                 ['name' => 'slug'],
-                ['name' => 'content']
+                ['name' => 'content'],
+                ['name' => 'created_at']
             )
             ->length(
                 ['name' => 'content', 'min' => 10],
