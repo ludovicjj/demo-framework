@@ -5,6 +5,7 @@ use Framework\Renderer\TwigRendererFactory;
 use Framework\Session\PHPSession;
 use Framework\Session\SessionInterface;
 use Framework\Twig\FlashExtension;
+use Framework\Twig\FormExtension;
 use Framework\Twig\PaginationExtension;
 use Framework\Twig\RouterExtension;
 use Framework\Twig\TextExtension;
@@ -27,7 +28,8 @@ return [
         get(PaginationExtension::class),
         get(TextExtension::class),
         get(TimeExtension::class),
-        get(FlashExtension::class)
+        get(FlashExtension::class),
+        get(FormExtension::class)
     ],
     Router::class => create(),
     SessionInterface::class => create(PHPSession::class),

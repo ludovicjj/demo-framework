@@ -73,7 +73,7 @@ class Validator
     /**
      * Vérifie la longeur de la valeur.
      *
-     * @param array ...$constraints
+     * @param array[] $constraints
      * @return Validator
      */
     public function length(array ...$constraints): self

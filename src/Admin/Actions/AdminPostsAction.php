@@ -2,6 +2,7 @@
 
 namespace App\Admin\Actions;
 
+use App\Blog\Entity\Post;
 use App\Blog\Repository\PostRepository;
 use Framework\Renderer\RendererInterface;
 use Framework\Response\RedirectResponse;
@@ -70,28 +71,21 @@ class AdminPostsAction
     public function create(ServerRequestInterface $request)
     {
         $errors = null;
-        $item = null;
+        $item = $this->createEntity();
 
         if ($request->getMethod() === 'POST') {
             $validator = $this->getValidator($request);
-
-            $data = array_merge(
-                $this->getFilterParseBody($request),
-                [
-                    'created_at' => date('Y-m-d H:i:s'),
-                    'updated_at' => date('Y-m-d H:i:s'),
-                ]
-            );
+            $formData = $this->getFilterParseBody($request);
 
             if ($validator->isValid()) {
-                $this->postRepository->insert($data);
+                $this->postRepository->insert($formData);
                 $this->flash->add('success', 'L\'article a été ajouté');
 
                 return new RedirectResponse(
                     $this->router->generateUri('admin.posts.index')
                 );
             }
-            $item = self::hydrateFormWithCurrentData($data, null);
+            $item = self::hydrateFormWithCurrentData($formData, null);
             $errors = $validator->getErrors();
         }
 
@@ -128,11 +122,10 @@ class AdminPostsAction
 
         if ($request->getMethod() === 'POST') {
             $validator = $this->getValidator($request);
-
-            $data = array_merge($this->getFilterParseBody($request), ['updated_at' => date('Y-m-d H:i:s')]);
+            $formData = $this->getFilterParseBody($request);
 
             if ($validator->isValid()) {
-                $this->postRepository->update($item->id, $data);
+                $this->postRepository->update($item->id, $formData);
                 $this->flash->add('success', 'L\'article a été modifié');
 
                 return new RedirectResponse(
@@ -140,7 +133,7 @@ class AdminPostsAction
                 );
             }
             $errors = $validator->getErrors();
-            $item = self::hydrateFormWithCurrentData($data, $item);
+            $item = self::hydrateFormWithCurrentData($formData, $item);
         }
 
         return $this->renderer->render(
@@ -187,9 +180,14 @@ class AdminPostsAction
      */
     private function getFilterParseBody(ServerRequestInterface $request): array
     {
-        return array_filter($request->getParsedBody(), function ($key) {
-            return in_array($key, ['name', 'slug', 'content']);
+        $formData =  array_filter($request->getParsedBody(), function ($key) {
+            return in_array($key, ['name', 'slug', 'content', 'created_at']);
         }, ARRAY_FILTER_USE_KEY);
+
+        return array_merge(
+            $formData,
+            ['updated_at' => date('Y-m-d H:i:s')]
+        );
     }
 
     /**
@@ -208,11 +206,14 @@ class AdminPostsAction
             )
             ->length(
                 ['name' => 'content', 'min' => 10],
-                ['name' => 'name', 'min' => 3, 'max' => 50],
-                ['name' => 'slug', 'min' => 3, 'max' => 50]
+                ['name' => 'name', 'min' => 5, 'max' => 50],
+                ['name' => 'slug', 'min' => 5, 'max' => 50]
             )
             ->slug(
                 ['name' => 'slug']
+            )
+            ->dateTime(
+                ['name' => 'created_at']
             );
     }
 
@@ -227,7 +228,16 @@ class AdminPostsAction
             $data['id'] = $entity->id;
             return $data;
         }
-
         return $data;
+    }
+
+    /**
+     * @return Post
+     */
+    private function createEntity(): Post
+    {
+        $item = new Post();
+        $item->created_at = date('Y-m-d H:i:s');
+        return $item;
     }
 }
