@@ -16,7 +16,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use Tests\DatabaseTestCase;
 
-class AdminPostsActionTest extends DatabaseTestCase
+class PostCrudActionTest extends DatabaseTestCase
 {
     /** @var PostRepository */
     private $postRepository;
@@ -31,7 +31,7 @@ class AdminPostsActionTest extends DatabaseTestCase
     private $flash;
 
     /** @var PostCrudAction */
-    private $adminPostsAction;
+    private $postCrudAction;
 
     public function setUp(): void
     {
@@ -40,7 +40,7 @@ class AdminPostsActionTest extends DatabaseTestCase
         $this->renderer = $this->createMock(RendererInterface::class);
         $this->router = $this->createMock(Router::class);
         $this->flash = $this->createMock(FlashService::class);
-        $this->adminPostsAction = new PostCrudAction(
+        $this->postCrudAction = new PostCrudAction(
             $this->renderer,
             $this->postRepository,
             $this->router,
@@ -57,7 +57,7 @@ class AdminPostsActionTest extends DatabaseTestCase
             ->withQueryParams(['page' => 100]);
 
         $this->expectException(NotFoundException::class);
-        $this->adminPostsAction->index($request);
+        $this->postCrudAction->index($request);
     }
 
     public function testCreateWithMethodPostAndInvalidFormData(): void
@@ -72,9 +72,9 @@ class AdminPostsActionTest extends DatabaseTestCase
         $request = (new ServerRequest('POST', '/'))
             ->withParsedBody($data);
 
-        $formData = self::callPrivateMethod($this->adminPostsAction, 'getFilterParseBody', [$request]);
-        $validator = self::callPrivateMethod($this->adminPostsAction, 'getValidator', [$request]);
-        $item = self::callPrivateMethod($this->adminPostsAction, 'hydrateFormWithCurrentData', [$formData, null]);
+        $formData = self::callPrivateMethod($this->postCrudAction, 'getFilterParseBody', [$request]);
+        $validator = self::callPrivateMethod($this->postCrudAction, 'getValidator', [$request]);
+        $item = self::callPrivateMethod($this->postCrudAction, 'hydrateFormWithCurrentData', [$formData, null]);
         $errors = $validator->getErrors();
 
         $this->assertCount(5, $formData);
@@ -90,13 +90,13 @@ class AdminPostsActionTest extends DatabaseTestCase
         $this->renderer->expects($this->once())
             ->method('render')
             ->with(
-                '@admin/post/create.html.twig',
+                'admin/posts/create.html.twig',
                 [
                     'errors' => $errors,
                     'item' => $item
                 ]
             )->willReturn('form is not valid');
-        $this->assertEquals('form is not valid', $this->adminPostsAction->create($request));
+        $this->assertEquals('form is not valid', $this->postCrudAction->create($request));
     }
 
     public function testCreateWithMethodPostAndValidForm(): void
@@ -117,7 +117,7 @@ class AdminPostsActionTest extends DatabaseTestCase
 
         $this->renderer->expects($this->never())->method('render');
 
-        $response = $this->adminPostsAction->create($request);
+        $response = $this->postCrudAction->create($request);
         $post = $this->postRepository->find(1);
 
         $this->assertInstanceOf(ResponseInterface::class, $response);
@@ -134,13 +134,17 @@ class AdminPostsActionTest extends DatabaseTestCase
         $this->renderer->expects($this->once())
             ->method('render')
             ->with(
-                '@admin/post/create.html.twig',
+                'admin/posts/create.html.twig',
                 [
                     'errors' => null,
-                    'item' => self::callPrivateMethod($this->adminPostsAction, 'createEntity', [])
+                    'item' => self::callPrivateMethod(
+                        $this->postCrudAction,
+                        'getNewEntity',
+                        [$this->postRepository->getEntity()]
+                    )
                 ]
             )->willReturn('demo');
-        $this->assertEquals('demo', $this->adminPostsAction->create($request));
+        $this->assertEquals('demo', $this->postCrudAction->create($request));
     }
 
 
