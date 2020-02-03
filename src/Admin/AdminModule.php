@@ -2,7 +2,7 @@
 
 namespace App\Admin;
 
-use App\Admin\Actions\AdminPostsAction;
+use App\Admin\Actions\PostCrudAction;
 use Framework\Module;
 use Framework\Renderer\RendererInterface;
 use Framework\Router\Router;
@@ -14,9 +14,8 @@ class AdminModule extends Module
 
     public function __construct(ContainerInterface $container)
     {
-        $container->get(RendererInterface::class)->addPath(__DIR__ . '/views', 'admin');
         $router = $container->get(Router::class);
         $adminPrefix = $container->get('admin.prefix');
-        $router->crud("$adminPrefix/posts", AdminPostsAction::class, 'admin.posts');
+        $router->crud("$adminPrefix/posts", PostCrudAction::class, 'admin.posts');
     }
 }

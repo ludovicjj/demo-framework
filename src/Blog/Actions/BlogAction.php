@@ -2,7 +2,7 @@
 
 namespace App\Blog\Actions;
 
-use App\Blog\Repository\PostRepository;
+use App\Repository\PostRepository;
 use Framework\Exceptions\NotFoundException;
 use Framework\Renderer\RendererInterface;
 use Framework\Response\RedirectResponse;

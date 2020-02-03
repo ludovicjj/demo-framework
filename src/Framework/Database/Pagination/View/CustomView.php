@@ -2,8 +2,8 @@
 
 namespace Framework\Database\Pagination\View;
 
-use App\Framework\Database\Pagination\View\Template\CustomTemplate;
-use App\Framework\Database\Pagination\View\Template\TemplateInterface;
+use Framework\Database\Pagination\View\Template\CustomTemplate;
+use Framework\Database\Pagination\View\Template\TemplateInterface;
 use Pagerfanta\Pagerfanta;
 
 class CustomView
@@ -152,7 +152,7 @@ class CustomView
             $this->next();
     }
 
-    private function renderCustomPages()
+    private function renderCustomPages(): string
     {
         return $this->previous().
             $this->first().

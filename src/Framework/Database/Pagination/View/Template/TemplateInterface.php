@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Framework\Database\Pagination\View\Template;
+namespace Framework\Database\Pagination\View\Template;
 
 interface TemplateInterface
 {

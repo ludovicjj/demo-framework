@@ -1,24 +1,23 @@
 <?php
 
-namespace App\Admin\Actions;
+namespace Framework\Actions;
 
-use App\Blog\Entity\Post;
-use App\Blog\Repository\PostRepository;
+use Framework\Database\Repository\Repository;
+use Framework\Exceptions\NotFoundException;
 use Framework\Renderer\RendererInterface;
 use Framework\Response\RedirectResponse;
 use Framework\Router\Router;
 use Framework\Session\FlashService;
 use Framework\Validator\Validator;
 use Psr\Http\Message\ServerRequestInterface;
-use Framework\Exceptions\NotFoundException;
 
-class AdminPostsAction
+class CrudAction
 {
     /** @var RendererInterface */
     private $renderer;
 
-    /** @var PostRepository */
-    private $postRepository;
+    /** @var Repository */
+    private $repository;
 
     /** @var Router */
     private $router;
@@ -26,20 +25,40 @@ class AdminPostsAction
     /** @var FlashService */
     private $flash;
 
+    /** @var string */
+    protected $viewPath;
+
+    /** @var string */
+    protected $routePrefixName;
+
+    /** @var array */
+    protected $messages = [
+        'create'    => "L'élément a bien été ajouté",
+        'edit'      => "L'élément a bien été modifié",
+        'delete'    => "L'élément a bien été supprimé"
+    ];
+
+    /**
+     * CrudAction constructor.
+     * @param RendererInterface $renderer
+     * @param Repository $repository
+     * @param Router $router
+     * @param FlashService $flash
+     */
     public function __construct(
         RendererInterface $renderer,
-        PostRepository $postRepository,
+        Repository $repository,
         Router $router,
         FlashService $flash
     ) {
         $this->renderer = $renderer;
-        $this->postRepository = $postRepository;
+        $this->repository = $repository;
         $this->router = $router;
         $this->flash = $flash;
     }
 
     /**
-     * Action pour afficher tous les posts
+     * Action pour afficher tous les elements
      *
      * @param ServerRequestInterface $request
      * @return string
@@ -51,10 +70,10 @@ class AdminPostsAction
         $page = $queryParams['page'] ?? 1;
         $perPage = 12;
 
-        $items = $this->postRepository->findPaginated($perPage, $page);
+        $items = $this->repository->findPaginated($perPage, $page);
 
         return $this->renderer->render(
-            '@admin/post/index.html.twig',
+            $this->viewPath . '/index.html.twig',
             [
                 'items' => $items,
                 'rows' => ($page * $perPage) - $perPage,
@@ -63,26 +82,26 @@ class AdminPostsAction
     }
 
     /**
-     * Action pour ajouter un post
+     * Action pour ajouter un element
      *
      * @param ServerRequestInterface $request
-     * @return string
+     * @return RedirectResponse|string
      */
     public function create(ServerRequestInterface $request)
     {
         $errors = null;
-        $item = $this->createEntity();
+        $item = $this->getNewEntity($this->repository->getEntity());
 
         if ($request->getMethod() === 'POST') {
             $validator = $this->getValidator($request);
             $formData = $this->getFilterParseBody($request);
 
             if ($validator->isValid()) {
-                $this->postRepository->insert($formData);
-                $this->flash->add('success', 'L\'article a été ajouté');
+                $this->repository->insert($formData);
+                $this->flash->add('success', $this->messages['create']);
 
                 return new RedirectResponse(
-                    $this->router->generateUri('admin.posts.index')
+                    $this->router->generateUri($this->routePrefixName . '.index')
                 );
             }
             $item = self::hydrateFormWithCurrentData($formData, null);
@@ -90,7 +109,7 @@ class AdminPostsAction
         }
 
         return $this->renderer->render(
-            '@admin/post/create.html.twig',
+            $this->viewPath . '/create.html.twig',
             [
                 'errors' => $errors,
                 'item' => $item
@@ -99,7 +118,7 @@ class AdminPostsAction
     }
 
     /**
-     * Action pour modifier un post
+     * Action pour modifier un element
      *
      * @param ServerRequestInterface $request
      * @return RedirectResponse|string
@@ -107,7 +126,7 @@ class AdminPostsAction
      */
     public function edit(ServerRequestInterface $request)
     {
-        $item = $this->postRepository->find($request->getAttribute('id'));
+        $item = $this->repository->find($request->getAttribute('id'));
         $errors = null;
         $itemName = $item->name;
 
@@ -125,11 +144,11 @@ class AdminPostsAction
             $formData = $this->getFilterParseBody($request);
 
             if ($validator->isValid()) {
-                $this->postRepository->update($item->id, $formData);
-                $this->flash->add('success', 'L\'article a été modifié');
+                $this->repository->update($item->id, $formData);
+                $this->flash->add('success', $this->messages['edit']);
 
                 return new RedirectResponse(
-                    $this->router->generateUri('admin.posts.index')
+                    $this->router->generateUri($this->routePrefixName . '.index')
                 );
             }
             $errors = $validator->getErrors();
@@ -137,7 +156,7 @@ class AdminPostsAction
         }
 
         return $this->renderer->render(
-            '@admin/post/edit.html.twig',
+            $this->viewPath . '/edit.html.twig',
             [
                 'item' => $item,
                 'errors' => $errors,
@@ -147,7 +166,7 @@ class AdminPostsAction
     }
 
     /**
-     * Action pour supprimer un post
+     * Action pour supprimer un element
      *
      * @param ServerRequestInterface $request
      * @return RedirectResponse
@@ -155,7 +174,7 @@ class AdminPostsAction
      */
     public function delete(ServerRequestInterface $request): RedirectResponse
     {
-        $item = $this->postRepository->find($request->getAttribute('id'));
+        $item = $this->repository->find($request->getAttribute('id'));
         if (!$item) {
             throw new NotFoundException(
                 sprintf(
@@ -164,11 +183,11 @@ class AdminPostsAction
                 )
             );
         }
-        $this->postRepository->delete($item->id);
-        $this->flash->add('success', 'L\'article a été supprimé');
+        $this->repository->delete($item->id);
+        $this->flash->add('success', $this->messages['delete']);
 
         return new RedirectResponse(
-            $this->router->generateUri('admin.posts.index')
+            $this->router->generateUri($this->routePrefixName . '.index')
         );
     }
 
@@ -178,44 +197,40 @@ class AdminPostsAction
      * @param ServerRequestInterface $request
      * @return array
      */
-    private function getFilterParseBody(ServerRequestInterface $request): array
+    protected function getFilterParseBody(ServerRequestInterface $request): array
     {
         $formData =  array_filter($request->getParsedBody(), function ($key) {
-            return in_array($key, ['name', 'slug', 'content', 'created_at']);
+            return in_array($key, []);
         }, ARRAY_FILTER_USE_KEY);
 
-        return array_merge(
-            $formData,
-            ['updated_at' => date('Y-m-d H:i:s')]
-        );
+        return $formData;
     }
 
     /**
-     * Initialise le Validator avec les constraintes
+     * Initialise le Validator
      *
      * @param ServerRequestInterface $request
      * @return Validator
      */
-    private function getValidator(ServerRequestInterface $request): Validator
+    protected function getValidator(ServerRequestInterface $request): Validator
     {
-        return (new Validator($request->getParsedBody()))
-            ->required(
-                ['name' => 'name'],
-                ['name' => 'slug'],
-                ['name' => 'content'],
-                ['name' => 'created_at']
-            )
-            ->length(
-                ['name' => 'content', 'min' => 10],
-                ['name' => 'name', 'min' => 5, 'max' => 50],
-                ['name' => 'slug', 'min' => 5, 'max' => 50]
-            )
-            ->slug(
-                ['name' => 'slug']
-            )
-            ->dateTime(
-                ['name' => 'created_at']
-            );
+        return new Validator($request->getParsedBody());
+    }
+
+    /**
+     * Hydrate la propriété "created_at"
+     *
+     * @param string|null $class
+     * @return null|mixed
+     */
+    protected function getNewEntity(?string $class)
+    {
+        if (!\is_null($class) && class_exists($class) && property_exists($class, 'created_at')) {
+            $entity = new $class();
+            $entity->created_at = date('Y-m-d H:i:s');
+            return $entity;
+        }
+        return null;
     }
 
     /**
@@ -230,15 +245,5 @@ class AdminPostsAction
             return $data;
         }
         return $data;
-    }
-
-    /**
-     * @return Post
-     */
-    private function createEntity(): Post
-    {
-        $item = new Post();
-        $item->created_at = date('Y-m-d H:i:s');
-        return $item;
     }
 }

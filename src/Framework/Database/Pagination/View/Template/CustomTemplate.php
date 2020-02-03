@@ -1,8 +1,6 @@
 <?php
 
-namespace App\Framework\Database\Pagination\View\Template;
-
-use Framework\Database\Pagination\View\Template\Template;
+namespace Framework\Database\Pagination\View\Template;
 
 class CustomTemplate extends Template
 {

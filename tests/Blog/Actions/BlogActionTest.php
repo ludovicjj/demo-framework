@@ -3,8 +3,8 @@
 namespace Tests\Blog\Actions;
 
 use App\Blog\Actions\BlogAction;
-use App\Blog\Entity\Post;
-use App\Blog\Repository\PostRepository;
+use App\Entity\Post;
+use App\Repository\PostRepository;
 use Framework\Exceptions\NotFoundException;
 use Framework\Renderer\RendererInterface;
 use Framework\Router\Router;

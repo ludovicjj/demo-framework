@@ -2,8 +2,8 @@
 
 namespace Tests\Blog\Repository;
 
-use App\Blog\Entity\Post;
-use App\Blog\Repository\PostRepository;
+use App\Entity\Post;
+use App\Repository\PostRepository;
 use Tests\DatabaseTestCase;
 
 class PostRepositoryTest extends DatabaseTestCase

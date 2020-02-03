@@ -1,21 +1,26 @@
 <?php
 
-namespace App\Blog\Repository;
+namespace Framework\Database\Repository;
 
-use App\Blog\Entity\Post;
 use Framework\Database\Pagination\PaginatedQuery;
 use Framework\Exceptions\NotFoundException;
 use Pagerfanta\Pagerfanta;
 
-class PostRepository
+class Repository
 {
     /** @var \PDO */
     private $pdo;
 
     /**
-     * PostRepository constructor.
-     * @param \PDO $pdo
+     * Nom de la table en BDD
+     *
+     * @var string
      */
+    protected $table;
+
+    /** @var string|null */
+    protected $entity;
+
     public function __construct(\PDO $pdo)
     {
         $this->pdo = $pdo;
@@ -31,9 +36,9 @@ class PostRepository
     {
         $query = new PaginatedQuery(
             $this->pdo,
-            'SELECT COUNT(id) FROM posts',
-            'SELECT * FROM posts ORDER BY created_at DESC LIMIT :offset, :length',
-            Post::class
+            "SELECT COUNT(id) FROM {$this->table}",
+            $this->paginationQuery(),
+            $this->entity
         );
 
         $maxPage = (new Pagerfanta($query))->setMaxPerPage($perPage)->getNbPages();
@@ -50,21 +55,33 @@ class PostRepository
     }
 
     /**
-     * Recupere une entité par son id
+     * @return string
+     */
+    protected function paginationQuery(): string
+    {
+        return "SELECT * FROM {$this->table}";
+    }
+
+    /**
+     * Recupere un élément par son id
      *
      * @param int $entityId
-     * @return null|Post
+     * @return mixed
      */
-    public function find(int $entityId): ?Post
+    public function find(int $entityId)
     {
-        $statement = $this->pdo->prepare('SELECT * FROM posts WHERE id = :id');
+        $statement = $this->pdo->prepare("SELECT * FROM {$this->table} WHERE id = :id");
         $statement->execute(['id' => $entityId]);
-        $statement->setFetchMode(\PDO::FETCH_CLASS, Post::class);
+
+        if ($this->entity) {
+            $statement->setFetchMode(\PDO::FETCH_CLASS, $this->entity);
+        }
+
         return $statement->fetch() ?: null;
     }
 
     /**
-     * Met à jour une entité par son id
+     * Met à jour les champs d'un élément par son id
      *
      * @param int $entityId
      * @param array $data
@@ -74,38 +91,62 @@ class PostRepository
     {
         $fieldQuery = $this->buildFieldQuery($data);
         $data['id'] = $entityId;
-        $statement = $this->pdo->prepare("UPDATE posts SET $fieldQuery WHERE id=:id");
+        $statement = $this->pdo->prepare("UPDATE {$this->table} SET {$fieldQuery} WHERE id=:id");
         return $statement->execute($data);
     }
 
     /**
-     * Ajoute une entité
+     * Ajoute un élément
      *
      * @param array $data
      * @return bool
      */
     public function insert(array $data): bool
     {
-        $values = join(', ', array_map(function ($value) {
-            return ":$value";
-        }, array_keys($data)));
-
         $fields = join(', ', array_keys($data));
 
-        $statement = $this->pdo->prepare("INSERT INTO posts ($fields) VALUES ($values)");
+        $values = join(', ', array_map(function ($key) {
+            return ":$key";
+        }, array_keys($data)));
+
+        $statement = $this->pdo->prepare("INSERT INTO {$this->table} ($fields) VALUES ($values)");
         return $statement->execute($data);
     }
 
     /**
-     * Supprime une entité
+     * Supprime un élément
      *
      * @param int $entityId
      * @return bool
      */
     public function delete(int $entityId): bool
     {
-        $query = $this->pdo->prepare('DELETE FROM posts WHERE id = :id');
+        $query = $this->pdo->prepare("DELETE FROM {$this->table} WHERE id = :id");
         return $query->execute(['id' => $entityId]);
+    }
+
+    /**
+     * @return string
+     */
+    public function getTable(): string
+    {
+        return $this->table;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getEntity(): ?string
+    {
+        return $this->entity;
+    }
+
+    /**
+     * @return \PDO
+     */
+    public function getPdo(): \PDO
+    {
+        return $this->pdo;
     }
 
     private function buildFieldQuery(array $data): string

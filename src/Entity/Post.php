@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Blog\Entity;
+namespace App\Entity;
 
 class Post
 {
