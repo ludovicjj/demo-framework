@@ -1,9 +1,9 @@
 {% extends 'admin/base_admin.html.twig' %}
 {% block body %}
-    <h1 class="mb-5">Administration des articles</h1>
+    <h1 class="mb-5">Administration des categories</h1>
 
     <p class="text-left">
-        <a class="btn btn-primary" href="{{ path('admin.posts.create') }}">Ajouter un article</a>
+        <a class="btn btn-primary" href="{{ path('admin.categories.create') }}">Ajouter une categorie</a>
     </p>
 
     <table class="table table-striped">
@@ -11,7 +11,6 @@
             <tr>
                 <th scope="col">#</th>
                 <th scope="col">Titre</th>
-                <th scope="col">Catégorie</th>
                 <th scope="col">Actions</th>
             </tr>
         </thead>
@@ -21,12 +20,11 @@
             <tr>
                 <th scope="row">{{ rows }}</th>
                 <td>{{ item.name }}</td>
-                <td>{{ item.category_name }}</td>
                 <td>
-                    <a class="btn btn-primary" href="{{ path('admin.posts.edit', {'id': item.id}) }}">
+                    <a class="btn btn-primary" href="{{ path('admin.categories.edit', {'id': item.id}) }}">
                         Editer
                     </a>
-                    <form action="{{ path('admin.posts.delete', {'id': item.id}) }}" method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr ?');">
+                    <form action="{{ path('admin.categories.delete', {'id': item.id}) }}" method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr ?');">
                         <input type="hidden" name="_method" value="DELETE">
                         <button class="btn btn-danger">Supprimer</button>
                     </form>
@@ -36,6 +34,6 @@
         </tbody>
     </table>
 
-    {{ paginate(items, 'admin.posts.index') }}
+    {{ paginate(items, 'admin.categories.index') }}
 
 {% endblock %}

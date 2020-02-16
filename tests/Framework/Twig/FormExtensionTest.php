@@ -6,6 +6,8 @@ use Framework\Twig\FormExtension;
 use Framework\Validator\ValidationError;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionException;
 
 class FormExtensionTest extends TestCase
 {
@@ -17,6 +19,10 @@ class FormExtensionTest extends TestCase
         $this->formExtension = new FormExtension();
     }
 
+    /**
+     * Test method getLabel()
+     * If label is not define use key
+     */
     public function testMethodGetLabel(): void
     {
         $this->assertEquals(
@@ -30,6 +36,28 @@ class FormExtensionTest extends TestCase
         );
     }
 
+    /**
+     * Test method getListOption
+     * method must return empty array or array with list option
+     */
+    public function testMethodGetListOption()
+    {
+        $params1 = ['options' => ['1' => 'option 1', '2' => 'option 2']];
+        $params2 = [];
+
+        $this->assertEquals(
+            ['1' => 'option 1', '2' => 'option 2'],
+            self::callPrivateMethod($this->formExtension, 'getListOption', [$params1])
+        );
+
+        $this->assertEquals([], self::callPrivateMethod($this->formExtension, 'getListOption', [$params2]));
+    }
+
+    /**
+     * Test method initializeAttributes()
+     * Method must return array with HTML attributs
+     * And update value of key "class" if error
+     */
     public function testMethodInitializeAttributes(): void
     {
         $this->assertSame(
@@ -46,36 +74,41 @@ class FormExtensionTest extends TestCase
         );
     }
 
+    /**
+     * Test method buildHtmlErrors()
+     * Method must return string with html of bootstrap
+     */
     public function testMethodBuildHtmlErrors(): void
     {
         $this->assertNull(
             self::callPrivateMethod($this->formExtension, 'buildHtmlErrors', [null, 'demo'])
         );
 
+        $paramsWithKeyNotMatch =  [['demo' => ['erreur 1']], 'name'];
+
         $this->assertNull(
-            self::callPrivateMethod(
-                $this->formExtension,
-                'buildHtmlErrors',
-                [
-                    ['demo' => ['error on the floor']],
-                    'name'
-                ]
-            )
+            self::callPrivateMethod($this->formExtension, 'buildHtmlErrors', $paramsWithKeyNotMatch)
         );
 
+        $paramsWithOneError = [['demo' => ['erreur 1']], 'demo'];
+
         $this->assertEquals(
-            '<div class="invalid-feedback">error on the floor</div>',
-            self::callPrivateMethod(
-                $this->formExtension,
-                'buildHtmlErrors',
-                [
-                    ['demo' => ['error on the floor']],
-                    'demo'
-                ]
-            )
+            '<div class="invalid-feedback">erreur 1</div>',
+            self::callPrivateMethod($this->formExtension, 'buildHtmlErrors', $paramsWithOneError)
+        );
+
+        $paramsWithManyError = [['demo' => ['erreur 1', 'erreur 2']], 'demo'];
+
+        $this->assertEquals(
+            '<div class="invalid-feedback">erreur 1</div><div class="invalid-feedback">erreur 2</div>',
+            self::callPrivateMethod($this->formExtension, 'buildHtmlErrors', $paramsWithManyError)
         );
     }
 
+    /**
+     * Test method buildHtmlFromArray()
+     * Method must return string
+     */
     public function testMethodBuildHtmlFromArray(): void
     {
         $attributes = [
@@ -91,6 +124,11 @@ class FormExtensionTest extends TestCase
         );
     }
 
+    /**
+     * Test getType()
+     * Method must return string
+     * Method return value of jey "type", if key is not define return default value "text"
+     */
     public function testMethodGetType(): void
     {
         $this->assertEquals(
@@ -103,6 +141,9 @@ class FormExtensionTest extends TestCase
         );
     }
 
+    /**
+     * Test la generation d'un champs "text"
+     */
     public function testInputText(): void
     {
         $html = $this->formExtension->field([], 'name', 'demo', 'demo');
@@ -116,6 +157,9 @@ class FormExtensionTest extends TestCase
         );
     }
 
+    /**
+     * Test la generation d'un champs "text" avec erreur
+     */
     public function testInputTextWithError(): void
     {
         $validatorError = $this->makeMockValidatorError('name', 'ma super erreur');
@@ -132,6 +176,9 @@ class FormExtensionTest extends TestCase
         );
     }
 
+    /**
+     * Test la generation d'un champs "text" valid
+     */
     public function testInputTextValid(): void
     {
         $context = ['errors' => []];
@@ -189,6 +236,9 @@ class FormExtensionTest extends TestCase
         );
     }
 
+    /**
+     * Test l'ajoute d'attributs
+     */
     public function testFieldWithOptionsAttr(): void
     {
         $html = $this->formExtension->field(
@@ -221,6 +271,31 @@ class FormExtensionTest extends TestCase
                 <textarea id="name" name="name" class="form-control demo" rows="10">demo</textarea>
             </div>',
             $html2
+        );
+    }
+
+    /**
+     * Test la generation d'un "select"
+     */
+    public function testInputSelect()
+    {
+        $html = $this->formExtension->field(
+            [],
+            'name',
+            '1',
+            'categories',
+            ['type' => 'select', 'options' => ['1' => 'categorie 1', '2' => 'categorie 2']]
+        );
+
+        $this->assertSimilar(
+            '<div class="form-group">
+                <label for="name">categories</label>
+                <select id="name" name="name" class="form-control">
+                    <option value="1" selected>categorie 1</option>
+                    <option value="2">categorie 2</option>
+                </select>
+            </div>',
+            $html
         );
     }
 
@@ -262,11 +337,11 @@ class FormExtensionTest extends TestCase
     private static function callPrivateMethod($obj, string $name, array $args)
     {
         try {
-            $class = new \ReflectionClass($obj);
+            $class = new ReflectionClass($obj);
             $method = $class->getMethod($name);
             $method->setAccessible(true);
             return $method->invokeArgs($obj, $args);
-        } catch (\ReflectionException $e) {
+        } catch (ReflectionException $e) {
             return $e->getMessage();
         }
     }

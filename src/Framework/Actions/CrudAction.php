@@ -10,7 +10,13 @@ use Framework\Router\Router;
 use Framework\Session\FlashService;
 use Framework\Validator\Validator;
 use Psr\Http\Message\ServerRequestInterface;
+use function is_null;
+use function is_object;
 
+/**
+ * Class CrudAction
+ * Class generique qui qui permet de standardiser la logic spécifique a un CRUD.
+ */
 class CrudAction
 {
     /** @var RendererInterface */
@@ -110,10 +116,12 @@ class CrudAction
 
         return $this->renderer->render(
             $this->viewPath . '/create.html.twig',
-            [
-                'errors' => $errors,
-                'item' => $item
-            ]
+            $this->sendParamsToView(
+                [
+                    'errors' => $errors,
+                    'item' => $item
+                ]
+            )
         );
     }
 
@@ -157,11 +165,13 @@ class CrudAction
 
         return $this->renderer->render(
             $this->viewPath . '/edit.html.twig',
-            [
-                'item' => $item,
-                'errors' => $errors,
-                'itemName' => $itemName
-            ]
+            $this->sendParamsToView(
+                [
+                    'item' => $item,
+                    'errors' => $errors,
+                    'itemName' => $itemName
+                ]
+            )
         );
     }
 
@@ -199,11 +209,9 @@ class CrudAction
      */
     protected function getFilterParseBody(ServerRequestInterface $request): array
     {
-        $formData =  array_filter($request->getParsedBody(), function ($key) {
+        return  array_filter($request->getParsedBody(), function ($key) {
             return in_array($key, []);
         }, ARRAY_FILTER_USE_KEY);
-
-        return $formData;
     }
 
     /**
@@ -225,12 +233,38 @@ class CrudAction
      */
     protected function getNewEntity(?string $class)
     {
-        if (!\is_null($class) && class_exists($class) && property_exists($class, 'created_at')) {
+        if (!is_null($class) && class_exists($class) && property_exists($class, 'created_at')) {
             $entity = new $class();
             $entity->created_at = date('Y-m-d H:i:s');
             return $entity;
         }
         return null;
+    }
+
+    /**
+     * Envoie à la vue un tableau de parametre pour le formulaire
+     *
+     * @return array
+     */
+    protected function addFormParams(): array
+    {
+        return [];
+    }
+
+    /**
+     * Envoie à la vue un tableau de parametre.
+     * Ajoute le resultat de addFormParams() si la method ne retourne pas un tableau vide
+     *
+     * @param array $params Le tableau de params a envoyer à la vue
+     * @return array
+     */
+    private function sendParamsToView(array $params): array
+    {
+        if (!empty($this->addFormParams())) {
+            $params['category'] = $this->addFormParams();
+        }
+        $params['category']['123121'] = 'fausse catégorie';
+        return $params;
     }
 
     /**
@@ -240,7 +274,7 @@ class CrudAction
      */
     private static function hydrateFormWithCurrentData(array $data, ?object $entity): array
     {
-        if (!\is_null($entity) && \is_object($entity) && property_exists($entity, 'id')) {
+        if (!is_null($entity) && is_object($entity) && property_exists($entity, 'id')) {
             $data['id'] = $entity->id;
             return $data;
         }

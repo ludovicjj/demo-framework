@@ -2,11 +2,16 @@
 
 namespace Framework\Validator;
 
+use DateTime;
+use function is_null;
+use PDO;
+
 class Validator
 {
-    /** @var array */
+    /** @var array $data*/
     private $data;
 
+    /** @var array $errors */
     private $errors = [];
 
     public function __construct(array $data)
@@ -17,15 +22,15 @@ class Validator
     /**
      * Vérifie que la clé existe le tableau de données.
      *
-     * @param array[] $constraints
+     * @param array ...$constraints
      * @return Validator
      */
-    public function required(array ...$constraints): self
+    public function required(...$constraints): self
     {
         foreach ($constraints as $constraint) {
             $value = $this->getValue($constraint['name']);
 
-            if (\is_null($value)) {
+            if (is_null($value)) {
                 $this->addError($constraint['name'], 'required', $constraint['message'] ?? null);
             }
         }
@@ -35,17 +40,17 @@ class Validator
     /**
      * Vérifie que la valeur est un slug.
      *
-     * @param array[] $constraints
+     * @param array ...$constraints
      * @return Validator
      */
-    public function slug(array ...$constraints): self
+    public function slug(...$constraints): self
     {
         $pattern = '/^[a-z0-9]+((-[a-z0-9]+){0,})$/';
 
         foreach ($constraints as $constraint) {
             $value = $this->getValue($constraint['name']);
 
-            if (!\is_null($value) && !preg_match($pattern, $value)) {
+            if (!is_null($value) && !preg_match($pattern, $value)) {
                 $this->addError($constraint['name'], 'slug', $constraint['message'] ?? null);
             }
         }
@@ -55,15 +60,15 @@ class Validator
     /**
      * Vérifie que la valeur n'est pas vide.
      *
-     * @param array[] $constraints
+     * @param array ...$constraints
      * @return Validator
      */
-    public function notEmpty(array ...$constraints): self
+    public function notEmpty(...$constraints): self
     {
         foreach ($constraints as $constraint) {
             $value = $this->getValue($constraint['name']);
 
-            if (\is_null($value) || empty($value)) {
+            if (is_null($value) || empty($value)) {
                 $this->addError($constraint['name'], 'empty', $constraint['message'] ?? null);
             }
         }
@@ -73,10 +78,10 @@ class Validator
     /**
      * Vérifie la longeur de la valeur.
      *
-     * @param array[] $constraints
+     * @param array ...$constraints
      * @return Validator
      */
-    public function length(array ...$constraints): self
+    public function length(...$constraints): self
     {
         foreach ($constraints as $constraint) {
             $length = mb_strlen($this->getValue($constraint['name']));
@@ -84,7 +89,7 @@ class Validator
             $max = $constraint['max'] ?? null;
 
             //TODO case minLength:
-            if (!\is_null($min) && \is_null($max) && $length < $min) {
+            if (!is_null($min) && is_null($max) && $length < $min) {
                 $this->addError(
                     $constraint['name'],
                     'minLength',
@@ -94,7 +99,7 @@ class Validator
             }
 
             //TODO case betweenLength:
-            if (!\is_null($min) && !\is_null($max) && ($length < $min || $length > $max)) {
+            if (!is_null($min) && !is_null($max) && ($length < $min || $length > $max)) {
                 $this->addError(
                     $constraint['name'],
                     'betweenLength',
@@ -104,7 +109,7 @@ class Validator
             }
 
             //TODO case maxLength:
-            if (!\is_null($max) && \is_null($min) && $length > $max) {
+            if (!is_null($max) && is_null($min) && $length > $max) {
                 $this->addError(
                     $constraint['name'],
                     'maxLength',
@@ -119,15 +124,15 @@ class Validator
     /**
      * Vérifie que la valeur est un dateTime valid.
      *
-     * @param array[] $constraints
-     * @return Validator
+     * @param array ...$constraints
+     * @return $this
      */
-    public function dateTime(array ...$constraints): self
+    public function dateTime(...$constraints): self
     {
         $format = 'Y-m-d H:i:s';
         foreach ($constraints as $constraint) {
-            $date = \DateTime::createFromFormat($format, $this->getValue($constraint['name']));
-            $error = \DateTime::getLastErrors();
+            $date = DateTime::createFromFormat($format, $this->getValue($constraint['name']));
+            $error = DateTime::getLastErrors();
 
             if ($error['error_count'] > 0 || $error['warning_count'] > 0 || $date === false) {
                 $this->addError(
@@ -138,6 +143,36 @@ class Validator
                 );
             }
         }
+        return $this;
+    }
+
+    /**
+     * Vérifie qu'un element exist en BDD
+     *
+     * @param array ...$constraints
+     * @return $this
+     */
+    public function exist(...$constraints)
+    {
+        foreach ($constraints as $constraint) {
+            /** @var PDO $pdo */
+            $pdo = $constraint['pdo'];
+            $value = $this->getValue($constraint['name']);
+
+            $statement = $pdo->prepare("SELECT id FROM {$constraint['table']} WHERE id = :id");
+            $statement->execute(['id' => $value]);
+
+            if (!$statement->fetchColumn() !== false) {
+                $this->addError(
+                    $constraint['name'],
+                    'exist',
+                    $constraint['message'] ?? null,
+                    [$constraint['table']]
+                );
+            }
+        }
+
+
         return $this;
     }
 

@@ -5,10 +5,11 @@ namespace Framework\Database\Repository;
 use Framework\Database\Pagination\PaginatedQuery;
 use Framework\Exceptions\NotFoundException;
 use Pagerfanta\Pagerfanta;
+use \PDO;
 
 class Repository
 {
-    /** @var \PDO */
+    /** @var PDO */
     private $pdo;
 
     /**
@@ -21,7 +22,7 @@ class Repository
     /** @var string|null */
     protected $entity;
 
-    public function __construct(\PDO $pdo)
+    public function __construct(PDO $pdo)
     {
         $this->pdo = $pdo;
     }
@@ -74,7 +75,7 @@ class Repository
         $statement->execute(['id' => $entityId]);
 
         if ($this->entity) {
-            $statement->setFetchMode(\PDO::FETCH_CLASS, $this->entity);
+            $statement->setFetchMode(PDO::FETCH_CLASS, $this->entity);
         }
 
         return $statement->fetch() ?: null;
@@ -121,9 +122,41 @@ class Repository
      */
     public function delete(int $entityId): bool
     {
-        $query = $this->pdo->prepare("DELETE FROM {$this->table} WHERE id = :id");
-        return $query->execute(['id' => $entityId]);
+        $statement = $this->pdo->prepare("DELETE FROM {$this->table} WHERE id = :id");
+        return $statement->execute(['id' => $entityId]);
     }
+
+    /**
+     * Retourne un tableau avec la liste d'element sous la forme suivante :
+     * key : id de l'element
+     * value : name de l'élément
+     */
+    public function findList()
+    {
+        $arrayRecords = $this->pdo->query("SELECT id, name FROM {$this->table}")
+            ->fetchAll(PDO::FETCH_NUM);
+        $list = [];
+
+        foreach ($arrayRecords as $record) {
+            $list[$record[0]] = $record[1];
+        }
+
+        return $list;
+    }
+
+    /**
+     * Vérifie qu'un element exist en BDD
+     *
+     * @param int $id
+     * @return bool
+     */
+    public function exist(int $id): bool
+    {
+        $statement = $this->pdo->prepare("SELECT id FROM {$this->table} WHERE id = :id");
+        $statement->execute(['id' => $id]);
+        return $statement->fetchColumn() !== false;
+    }
+
 
     /**
      * @return string
@@ -142,9 +175,9 @@ class Repository
     }
 
     /**
-     * @return \PDO
+     * @return PDO
      */
-    public function getPdo(): \PDO
+    public function getPdo(): PDO
     {
         return $this->pdo;
     }

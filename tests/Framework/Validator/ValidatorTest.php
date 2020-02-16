@@ -3,9 +3,9 @@
 namespace Tests\Framework\Validator;
 
 use Framework\Validator\Validator;
-use PHPUnit\Framework\TestCase;
+use Tests\DatabaseTestCase;
 
-class ValidatorTest extends TestCase
+class ValidatorTest extends DatabaseTestCase
 {
     public function testManyConstraintsOnOneKey(): void
     {
@@ -145,6 +145,26 @@ class ValidatorTest extends TestCase
         $this->assertCount(0, $this->makeValidator($date2)->dateTime(['name' => 'date'])->getErrors());
         $this->assertCount(1, $this->makeValidator($date3)->dateTime(['name' => 'date'])->getErrors());
         $this->assertCount(1, $this->makeValidator($date4)->dateTime(['name' => 'date'])->getErrors());
+    }
+
+    public function testExist()
+    {
+        $pdo = $this->getPdo();
+        $this->migrate($pdo);
+        $this->seed($pdo);
+
+        $validData = ['category' => 1];
+        $invalidData = ['category' => 4578];
+
+        $params = [
+            'name' => 'category',
+            'table' => 'categories',
+            'pdo' => $pdo
+        ];
+
+        $this->assertCount(0, $this->makeValidator($validData)->exist($params)->getErrors());
+        $this->assertCount(1, $this->makeValidator($invalidData)->exist($params)->getErrors());
+
     }
 
     private function makeValidator(array $data): Validator

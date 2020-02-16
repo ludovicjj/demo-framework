@@ -1,4 +1,5 @@
 {{ field('name', item.name, "Titre de l'article") }}
 {{ field('slug', item.slug, "Slug de l'article") }}
+{{ field('category_id', item.category_id, "Catégorie", {type: 'select', options: category}) }}
 {{ field('content', item.content, "Description de l'article", {type: 'textarea', attr: {rows: '10'}}) }}
 {{ field('created_at', item.created_at, "Date de création", {attr: {class: 'datepicker'}}) }}

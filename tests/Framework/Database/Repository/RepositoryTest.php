@@ -17,15 +17,20 @@ class RepositoryTest extends TestCase
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
         ]);
-        $sql = "CREATE table test (id INTEGER PRIMARY KEY, name VARCHAR( 255 ))";
+        $sql = "CREATE table test (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR( 255 ))";
 
         $pdo->exec($sql);
 
         $this->repository = new Repository($pdo);
-        $reflexion = new \ReflectionClass($this->repository);
-        $property = $reflexion->getProperty('table');
-        $property->setAccessible(true);
-        $property->setValue($this->repository, 'test');
+        try {
+            $reflexion = new \ReflectionClass($this->repository);
+            $property = $reflexion->getProperty('table');
+            $property->setAccessible(true);
+            $property->setValue($this->repository, 'test');
+        } catch (\ReflectionException $e) {
+            $e->getMessage();
+        }
+
     }
 
     public function testFind()
@@ -35,5 +40,22 @@ class RepositoryTest extends TestCase
         $records = $this->repository->find(1);
         $this->assertInstanceOf(\stdClass::class, $records);
         $this->assertEquals('a1', $records->name);
+    }
+
+    public function testFindList()
+    {
+        $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a1")');
+        $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a2")');
+        $list = $this->repository->findList();
+        $this->assertEquals(['1' => 'a1', '2' => 'a2'], $list);
+    }
+
+    public function testExist()
+    {
+        $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a1")');
+        $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a2")');
+        $this->assertTrue($this->repository->exist(1));
+        $this->assertTrue($this->repository->exist(2));
+        $this->assertFalse($this->repository->exist(3));
     }
 }

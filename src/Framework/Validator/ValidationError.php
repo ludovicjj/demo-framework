@@ -74,13 +74,13 @@ class ValidationError extends AbstractValidationError
      */
     public function getMessage(): string
     {
-        $message = array_merge([$this->messages[$this->rule], $this->property], $this->options);
+        $message = array_merge([$this->messages[$this->getRule()], $this->property], $this->options);
         return call_user_func_array('sprintf', $message);
     }
 
     public function __toString(): string
     {
-        $message = array_merge([$this->messages[$this->rule], $this->property], $this->options);
+        $message = array_merge([$this->messages[$this->getRule()], $this->property], $this->options);
         return call_user_func_array('sprintf', $message);
     }
 }

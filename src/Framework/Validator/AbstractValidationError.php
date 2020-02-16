@@ -11,6 +11,7 @@ abstract class AbstractValidationError
         'minLength' => 'Le champs %s doit contenir plus de %d caractères',
         'betweenLength' => 'Le champs %s doit contenir entre %d et %d caractères',
         'maxLength' => 'Le champs %s doit contenir moins de %d caractrères',
-        'datetime' => 'Le champs %s doit être une date valide (%s)'
+        'datetime' => 'Le champs %s doit être une date valide (%s)',
+        'exist' => 'Le champs %s n\'existe pas dans la table %s'
     ];
 }

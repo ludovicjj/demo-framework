@@ -3,10 +3,11 @@
 namespace Framework\Database\Pagination;
 
 use Pagerfanta\Adapter\AdapterInterface;
+use PDO;
 
 class PaginatedQuery implements AdapterInterface
 {
-    /** @var \PDO */
+    /** @var PDO */
     private $pdo;
 
     /** @var string */
@@ -20,13 +21,13 @@ class PaginatedQuery implements AdapterInterface
 
     /**
      * PaginatedQuery constructor.
-     * @param \PDO $pdo
+     * @param PDO $pdo
      * @param string $count
      * @param string $query
      * @param string|null $entity
      */
     public function __construct(
-        \PDO $pdo,
+        PDO $pdo,
         string $count,
         string $query,
         ?string $entity
@@ -58,10 +59,10 @@ class PaginatedQuery implements AdapterInterface
     public function getSlice($offset, $length)
     {
         $statement = $this->pdo->prepare($this->query);
-        $statement->bindParam(':offset', $offset, \PDO::PARAM_INT);
-        $statement->bindParam(':length', $length, \PDO::PARAM_INT);
+        $statement->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $statement->bindParam(':length', $length, PDO::PARAM_INT);
         if ($this->entity) {
-            $statement->setFetchMode(\PDO::FETCH_CLASS, $this->entity);
+            $statement->setFetchMode(PDO::FETCH_CLASS, $this->entity);
         }
 
         $statement->execute();

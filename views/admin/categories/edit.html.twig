@@ -1,0 +1,10 @@
+{% extends 'admin/base_admin.html.twig' %}
+{% block body %}
+    <h1 class="mb-5">Editer {{ itemName }}</h1>
+
+    <form method="post" action="{{ path('admin.categories.edit', {id: item.id}) }}">
+        {% include 'admin/categories/form_categorie.html.twig' %}
+        <button class="btn btn-primary" type="submit">Editer</button>
+    </form>
+
+{% endblock %}

@@ -4,6 +4,7 @@ namespace Tests\Admin\Actions;
 
 use App\Admin\Actions\PostCrudAction;
 use App\Entity\Post;
+use App\Repository\CategoryRepository;
 use App\Repository\PostRepository;
 use Framework\Exceptions\NotFoundException;
 use Framework\Renderer\RendererInterface;
@@ -30,21 +31,27 @@ class PostCrudActionTest extends DatabaseTestCase
     /** @var MockObject */
     private $flash;
 
+    /** @var CategoryRepository */
+    private $categoryRepository;
+
     /** @var PostCrudAction */
     private $postCrudAction;
 
     public function setUp(): void
     {
-        parent::setUp();
-        $this->postRepository = new PostRepository($this->getPdo());
+        $pdo = $this->getPdo();
+        $this->migrate($pdo);
+        $this->postRepository = new PostRepository($pdo);
         $this->renderer = $this->createMock(RendererInterface::class);
         $this->router = $this->createMock(Router::class);
         $this->flash = $this->createMock(FlashService::class);
+        $this->categoryRepository = new CategoryRepository($pdo);
         $this->postCrudAction = new PostCrudAction(
             $this->renderer,
             $this->postRepository,
             $this->router,
-            $this->flash
+            $this->flash,
+            $this->categoryRepository
         );
     }
 
@@ -62,11 +69,15 @@ class PostCrudActionTest extends DatabaseTestCase
 
     public function testCreateWithMethodPostAndInvalidFormData(): void
     {
+        // Lance fixtures
+        $this->seed($this->postRepository->getPdo());
+
         $data = [
             'name' => 'hey',
             'slug' => 'demo',
             'content' => 'demo content',
-            'created_at' => '2020-02-02 13:46:00'
+            'created_at' => '2020-02-02 13:46:00',
+            'category_id' => '1'
         ];
 
         $request = (new ServerRequest('POST', '/'))
@@ -77,30 +88,35 @@ class PostCrudActionTest extends DatabaseTestCase
         $item = self::callPrivateMethod($this->postCrudAction, 'hydrateFormWithCurrentData', [$formData, null]);
         $errors = $validator->getErrors();
 
-        $this->assertCount(5, $formData);
+        $this->assertCount(6, $formData);
         $this->assertInstanceOf(Validator::class, $validator);
         $this->assertCount(2, $errors);
 
-        /** @var ValidationError $error */
+
         foreach ($errors as $error) {
             $this->assertInstanceOf(ValidationError::class, $error);
             $this->assertContains($error->getProperty(), ['name', 'slug']);
         }
 
+        $params = [
+            'errors' => $errors,
+            'item' => $item,
+        ];
+
         $this->renderer->expects($this->once())
             ->method('render')
             ->with(
                 'admin/posts/create.html.twig',
-                [
-                    'errors' => $errors,
-                    'item' => $item
-                ]
+                self::callPrivateMethod($this->postCrudAction, 'sendParamsToView', [$params])
             )->willReturn('form is not valid');
         $this->assertEquals('form is not valid', $this->postCrudAction->create($request));
     }
 
     public function testCreateWithMethodPostAndValidForm(): void
     {
+        // Lance fixtures
+        $this->seed($this->postRepository->getPdo());
+
         $request = (new ServerRequest('POST', '/'))
             ->withParsedBody(
                 [
@@ -108,6 +124,7 @@ class PostCrudActionTest extends DatabaseTestCase
                     'slug' => 'alt-236',
                     'content' => 'demo content',
                     'created_at' => '2020-02-01 18:17:00',
+                    'category_id' => '1'
                 ]
             );
         $this->router->expects($this->once())
@@ -118,7 +135,8 @@ class PostCrudActionTest extends DatabaseTestCase
         $this->renderer->expects($this->never())->method('render');
 
         $response = $this->postCrudAction->create($request);
-        $post = $this->postRepository->find(1);
+        $postId = $this->postRepository->getPdo()->lastInsertId();
+        $post = $this->postRepository->find($postId);
 
         $this->assertInstanceOf(ResponseInterface::class, $response);
         $this->assertEquals(301, $response->getStatusCode());
@@ -131,18 +149,20 @@ class PostCrudActionTest extends DatabaseTestCase
     public function testCreateWithMethodGet(): void
     {
         $request = new ServerRequest('GET', '/');
+        $params = [
+            'errors' => null,
+            'item' => self::callPrivateMethod(
+                $this->postCrudAction,
+                'getNewEntity',
+                [$this->postRepository->getEntity()]
+            )
+        ];
+
         $this->renderer->expects($this->once())
             ->method('render')
             ->with(
                 'admin/posts/create.html.twig',
-                [
-                    'errors' => null,
-                    'item' => self::callPrivateMethod(
-                        $this->postCrudAction,
-                        'getNewEntity',
-                        [$this->postRepository->getEntity()]
-                    )
-                ]
+                self::callPrivateMethod($this->postCrudAction, 'sendParamsToView', [$params])
             )->willReturn('demo');
         $this->assertEquals('demo', $this->postCrudAction->create($request));
     }
