@@ -135,17 +135,9 @@ class CrudAction
     public function edit(ServerRequestInterface $request)
     {
         $item = $this->repository->find($request->getAttribute('id'));
+
         $errors = null;
         $itemName = $item->name;
-
-        if (!$item) {
-            throw new NotFoundException(
-                sprintf(
-                    'Not found entity with id : "%s"',
-                    $request->getAttribute('id')
-                )
-            );
-        }
 
         if ($request->getMethod() === 'POST') {
             $validator = $this->getValidator($request);
@@ -185,14 +177,7 @@ class CrudAction
     public function delete(ServerRequestInterface $request): RedirectResponse
     {
         $item = $this->repository->find($request->getAttribute('id'));
-        if (!$item) {
-            throw new NotFoundException(
-                sprintf(
-                    'Not found entity with id : "%s"',
-                    $request->getAttribute('id')
-                )
-            );
-        }
+
         $this->repository->delete($item->id);
         $this->flash->add('success', $this->messages['delete']);
 
@@ -249,6 +234,11 @@ class CrudAction
     protected function addFormParams(): array
     {
         return [];
+    }
+
+    protected function getRepository()
+    {
+        return $this->repository;
     }
 
     /**

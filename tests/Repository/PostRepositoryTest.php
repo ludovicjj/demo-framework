@@ -4,6 +4,7 @@ namespace Tests\Blog\Repository;
 
 use App\Entity\Post;
 use App\Repository\PostRepository;
+use Framework\Exceptions\NotFoundException;
 use Tests\DatabaseTestCase;
 use PDO;
 
@@ -22,6 +23,9 @@ class PostRepositoryTest extends DatabaseTestCase
         $this->postRepository = new PostRepository($this->pdo);
     }
 
+    /**
+     * @throws NotFoundException
+     */
     public function testFind(): void
     {
         $this->seed($this->pdo);
@@ -29,12 +33,18 @@ class PostRepositoryTest extends DatabaseTestCase
         $this->assertInstanceOf(Post::class, $post);
     }
 
-    public function testFindNotFound(): void
+    /**
+     * @throws NotFoundException
+     */
+    public function testFindException(): void
     {
-        $post = $this->postRepository->find(45458878);
-        $this->assertNull($post);
+        $this->expectException(NotFoundException::class);
+        $this->postRepository->find(45458878);
     }
 
+    /**
+     * @throws NotFoundException
+     */
     public function testUpdate(): void
     {
         $this->seed($this->pdo);
@@ -44,6 +54,9 @@ class PostRepositoryTest extends DatabaseTestCase
         $this->assertEquals('demo-slug', $post->slug);
     }
 
+    /**
+     * @throws NotFoundException
+     */
     public function testInsert(): void
     {
         $this->postRepository->insert(['name' => 'mon titre', 'slug' => 'demo-slug']);

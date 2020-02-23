@@ -2,19 +2,20 @@
 
 namespace Tests\Blog\Actions;
 
-use App\Blog\Actions\BlogAction;
+use App\Blog\Actions\PostShowAction;
 use App\Entity\Post;
 use App\Repository\PostRepository;
 use Framework\Exceptions\NotFoundException;
 use Framework\Renderer\RendererInterface;
+use Framework\Response\RedirectResponse;
 use Framework\Router\Router;
 use GuzzleHttp\Psr7\ServerRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class BlogActionTest extends TestCase
+class PostShowActionTest extends TestCase
 {
-    /** @var BlogAction */
+    /** @var PostShowAction $action */
     private $action;
 
     /** @var MockObject */
@@ -32,10 +33,10 @@ class BlogActionTest extends TestCase
         $this->postRepository = $this->createMock(PostRepository::class);
         $this->router = $this->createMock(Router::class);
 
-        $this->action = new BlogAction(
+        $this->action = new PostShowAction(
+            $this->postRepository,
             $this->renderer,
-            $this->router,
-            $this->postRepository
+            $this->router
         );
     }
 
@@ -55,12 +56,23 @@ class BlogActionTest extends TestCase
             ->withAttribute('slug', 'slug-test')
         ;
 
-        $this->postRepository->method('find')->willReturn($post);
-        $this->router->method('generateUri')->willReturn('blog/demo-test-9');
+        $this->postRepository
+            ->expects($this->once())
+            ->method('findWithCategory')
+            ->with(['id' => $request->getAttribute('id')])
+            ->willReturn($post);
+
+        $this->router
+            ->expects($this->once())
+            ->method('generateUri')
+            ->with('blog.show', ['slug' => $post->slug, 'id' => $post->id])
+            ->willReturn('blog/mon-super-slug-test-9');
 
         $response = call_user_func_array([$this->action, 'show'], [$request]);
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertEquals(301, $response->getStatusCode());
-        $this->assertEquals(['blog/demo-test-9'], $response->getHeader('Location'));
+        $this->assertEquals(['blog/mon-super-slug-test-9'], $response->getHeader('Location'));
     }
 
     public function testShowException()
@@ -70,8 +82,13 @@ class BlogActionTest extends TestCase
             ->withAttribute('slug', 'slug-test')
         ;
 
-        $this->postRepository->method('find')->willReturn(null);
         $this->expectException(NotFoundException::class);
+
+        $this->postRepository
+            ->expects($this->once())
+            ->method('findWithCategory')
+            ->with(['id' => $request->getAttribute('id')])
+            ->will($this->throwException(new NotFoundException()));
         call_user_func_array([$this->action, 'show'], [$request]);
     }
 
@@ -83,10 +100,19 @@ class BlogActionTest extends TestCase
             ->withAttribute('slug', $post->slug)
         ;
 
-        $this->postRepository->method('find')->willReturn($post);
-        $this->renderer->method('render')->willReturn("<h1>$post->slug</h1>");
+        $this->postRepository
+            ->expects($this->once())
+            ->method('findWithCategory')
+            ->with(['id' => $request->getAttribute('id')])
+            ->willReturn($post);
+
+        $this->renderer
+            ->expects($this->once())
+            ->method('render')
+            ->willReturn("<h1>$post->slug</h1>");
 
         $response = call_user_func_array([$this->action, 'show'], [$request]);
+
         $this->assertEquals('<h1>mon-super-slug-test</h1>', $response);
     }
 }

@@ -152,7 +152,7 @@ class Validator
      * @param array ...$constraints
      * @return $this
      */
-    public function exist(...$constraints)
+    public function exist(...$constraints): self
     {
         foreach ($constraints as $constraint) {
             /** @var PDO $pdo */
@@ -162,7 +162,7 @@ class Validator
             $statement = $pdo->prepare("SELECT id FROM {$constraint['table']} WHERE id = :id");
             $statement->execute(['id' => $value]);
 
-            if (!$statement->fetchColumn() !== false) {
+            if ($statement->fetchColumn() === false) {
                 $this->addError(
                     $constraint['name'],
                     'exist',
@@ -172,7 +172,43 @@ class Validator
             }
         }
 
+        return $this;
+    }
 
+    /**
+     * Vérifie qu'un element est unique
+     *
+     * @param array ...$constraints
+     * @return $this
+     */
+    public function unique(...$constraints): self
+    {
+        foreach ($constraints as $constraint) {
+            /** @var PDO $pdo */
+            $pdo = $constraint['pdo'];
+            $field = $constraint['name'];
+            $value = $this->getValue($constraint['name']);
+            $exclude = $constraint['id'];
+
+            $query = "SELECT id FROM {$constraint['table']} WHERE $field = :$field";
+            $params = [$field => $value];
+
+            if (!is_null($exclude)) {
+                $query .= " AND id != :id";
+                $params['id'] = $exclude;
+            }
+            $statement = $pdo->prepare($query);
+            $statement->execute($params);
+
+
+            if ($statement->fetchColumn() !== false) {
+                $this->addError(
+                    $field,
+                    'unique',
+                    $constraint['message'] ?? null
+                );
+            }
+        }
         return $this;
     }
 

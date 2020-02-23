@@ -1,13 +1,15 @@
 {% extends 'base.html.twig' %}
 
-{% block title parent() ~'des articles' %}
+{% block title %}
+    Catégorie : {{ category.name }}
+{% endblock %}
 
 {% block body %}
-    <h1 class="mb-5">Bienvenue sur le blog</h1>
-
-    {{ paginate(posts, 'blog.index') }}
-
     <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Catégorie : {{ category.name }}</h2>
+        </div>
+
         <div class="col-md-9">
             <div class="row">
                 {% for post in posts %}
@@ -43,14 +45,14 @@
         </div>
         <div class="col-md-3">
             <ul class="list-group">
-                {% for category in categories %}
-                    <li class="list-group-item">
-                        <a href="{{ path('category.show', {'slug' : category.slug}) }}">{{ category.name }}</a>
-                    </li>
+                {% for c in categories %}
+                    <a class="list-group-item list-group-item-action {% if c.id == category.id %}active{% endif %}"
+                       href="{{ path('category.show', {'slug' : c.slug}) }}">
+                        {{ c.name }}
+                    </a>
                 {% endfor %}
             </ul>
         </div>
-    </div><!-- .row -->
-
-    {{ paginate(posts, 'blog.index') }}
+    </div>
+    {{ paginate(posts, 'category.show', {slug : category.slug}) }}
 {% endblock %}

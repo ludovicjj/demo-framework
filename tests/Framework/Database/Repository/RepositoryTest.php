@@ -5,6 +5,7 @@ namespace Tests\Framework\Database\Repository;
 use Framework\Database\Repository\Repository;
 use PHPUnit\Framework\TestCase;
 use \PDO;
+use Framework\Exceptions\NotFoundException;
 
 class RepositoryTest extends TestCase
 {
@@ -33,6 +34,9 @@ class RepositoryTest extends TestCase
 
     }
 
+    /**
+     * @throws NotFoundException
+     */
     public function testFind()
     {
         $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a1")');
@@ -48,6 +52,30 @@ class RepositoryTest extends TestCase
         $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a2")');
         $list = $this->repository->findList();
         $this->assertEquals(['1' => 'a1', '2' => 'a2'], $list);
+    }
+
+    public function testFindAll()
+    {
+        $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a1")');
+        $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a2")');
+        $records = $this->repository->findAll();
+        $this->assertCount(2, $records);
+        $this->assertInstanceOf(\stdClass::class, $records[0]);
+        $this->assertEquals('a1', $records[0]->name);
+        $this->assertEquals('a2', $records[1]->name);
+    }
+
+    /**
+     * @throws NotFoundException
+     */
+    public function testFindOneBy()
+    {
+        $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a1")');
+        $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a2")');
+        $this->repository->getPdo()->exec('INSERT INTO test (name) VALUES ("a1")');
+        $record = $this->repository->findOneBy(['name' => 'a1']);
+        $this->assertInstanceOf(\stdClass::class, $record);
+        $this->assertEquals(1, (int)$record->id);
     }
 
     public function testExist()

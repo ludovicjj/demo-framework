@@ -27,8 +27,19 @@ class PaginationExtension extends AbstractExtension
         ];
     }
 
-    public function paginate(Pagerfanta $paginatedItems, string $routeName, array $queryParams = [])
-    {
+    /**
+     * @param Pagerfanta $paginatedItems
+     * @param string $routeName
+     * @param array $routeParams
+     * @param array $queryParams
+     * @return mixed
+     */
+    public function paginate(
+        Pagerfanta $paginatedItems,
+        string $routeName,
+        array $routeParams = [],
+        array $queryParams = []
+    ) {
         $view = new CustomView();
         $view->setRenderCustom(true);
 
@@ -39,13 +50,11 @@ class PaginationExtension extends AbstractExtension
             'next_message' => '<i class="fas fa-angle-right"></i>',
         ];
 
-        $html = $view->render($paginatedItems, function (int $page) use ($routeName, $queryParams) {
+        return $view->render($paginatedItems, function (int $page) use ($routeName, $routeParams, $queryParams) {
             if ($page > 1) {
                 $queryParams['page'] = $page;
             }
-            return $this->router->generateUri($routeName, [], $queryParams);
+            return $this->router->generateUri($routeName, $routeParams, $queryParams);
         }, $options);
-
-        return $html;
     }
 }

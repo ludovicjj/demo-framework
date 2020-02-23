@@ -66,6 +66,14 @@ class CategoryCrudAction extends CrudAction
                 ['name' => 'name', 'min' => 5, 'max' => 50],
                 ['name' => 'slug', 'min' => 5, 'max' => 50]
             )
+            ->unique(
+                [
+                    'name' => 'slug',
+                    'table' => $this->getRepository()->getTable(),
+                    'pdo' => $this->getRepository()->getPdo(),
+                    'id' => $request->getAttribute('id')
+                ]
+            )
             ->slug(
                 ['name' => 'slug']
             );

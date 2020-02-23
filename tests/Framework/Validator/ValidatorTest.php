@@ -162,9 +162,38 @@ class ValidatorTest extends DatabaseTestCase
             'pdo' => $pdo
         ];
 
-        $this->assertCount(0, $this->makeValidator($validData)->exist($params)->getErrors());
         $this->assertCount(1, $this->makeValidator($invalidData)->exist($params)->getErrors());
+        $this->assertCount(0, $this->makeValidator($validData)->exist($params)->getErrors());
+    }
 
+    public function testUnique()
+    {
+        $pdo = $this->getPdo();
+        $sql = "CREATE table test (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR( 255 ))";
+        $pdo->exec($sql);
+        $pdo->exec('INSERT INTO test (name) VALUES ("a1")');
+        $pdo->exec('INSERT INTO test (name) VALUES ("a2")');
+
+
+        $this->assertCount(
+            0,
+            $this->makeValidator(['name' => 'a3'])->unique($this->makeParamsUnique($pdo))->getErrors()
+        );
+
+        $this->assertCount(
+            1,
+            $this->makeValidator(['name' => 'a1'])->unique($this->makeParamsUnique($pdo))->getErrors()
+        );
+
+        $this->assertCount(
+            0,
+            $this->makeValidator(['name' => 'a1'])->unique($this->makeParamsUnique($pdo, 1))->getErrors()
+        );
+
+        $this->assertCount(
+            1,
+            $this->makeValidator(['name' => 'a2'])->unique($this->makeParamsUnique($pdo, 1))->getErrors()
+        );
     }
 
     private function makeValidator(array $data): Validator
@@ -175,5 +204,20 @@ class ValidatorTest extends DatabaseTestCase
     private function getDataForMethodLength(): array
     {
         return ['content' => '123456789'];
+    }
+
+    private function makeParamsUnique(\PDO $pdo, int $id = null)
+    {
+        $params = [
+            'name' => 'name',
+            'table' => 'test',
+            'pdo' => $pdo,
+            'id' => null
+        ];
+
+        if (!is_null($id)) {
+            $params['id'] = $id;
+        }
+        return $params;
     }
 }

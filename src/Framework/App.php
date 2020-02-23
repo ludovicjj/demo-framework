@@ -41,7 +41,7 @@ class App
     {
         $uri = $request->getUri()->getPath();
 
-        //Todo update request method if key "_method" exist
+        //TODO update request method if key "_method" exist
         $parseBody = $request->getParsedBody();
         if (array_key_exists('_method', $parseBody) &&
             in_array($parseBody['_method'], ['DELETE', 'PUT'])
@@ -51,14 +51,13 @@ class App
 
         //TODO case : trailingSlash
         if (!empty($uri) && $uri !== '/' && $uri[-1] === '/') {
-            $response = (new Response())
+            return (new Response())
                 ->withStatus(301)
                 ->withHeader('Location', substr($uri, 0, -1))
             ;
-            return $response;
         }
 
-        //Todo recuperation du router via le container
+        //TODO recuperation du router via le container
         $router = $this->container->get(Router::class);
         $route = $router->match($request);
 
@@ -77,7 +76,7 @@ class App
             $request
         );
 
-        //Todo initialise la class et lance la method.
+        //TODO initialise la class et lance la method.
         try {
             $response = $this->initCallback($route->getCallback(), $request);
         } catch (NotFoundException $notFoundException) {

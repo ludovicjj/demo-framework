@@ -67,18 +67,40 @@ class Repository
      * Recupere un élément par son id
      *
      * @param int $entityId
+     * @throws NotFoundException
      * @return mixed
      */
     public function find(int $entityId)
     {
-        $statement = $this->pdo->prepare("SELECT * FROM {$this->table} WHERE id = :id");
-        $statement->execute(['id' => $entityId]);
+        return $this->fetchOrFail("SELECT * FROM {$this->table} WHERE id = :id", ['id' => $entityId]);
+    }
 
+    /**
+     * Recupere tous les éléments
+     *
+     * @return array
+     */
+    public function findAll()
+    {
+        $statement = $this->pdo->query("SELECT * FROM {$this->table}");
         if ($this->entity) {
             $statement->setFetchMode(PDO::FETCH_CLASS, $this->entity);
+        } else {
+            $statement->setFetchMode(PDO::FETCH_OBJ);
         }
+        return $statement->fetchAll();
+    }
 
-        return $statement->fetch() ?: null;
+    /**
+     * @param array $criteria
+     * @throws NotFoundException
+     * @return mixed
+     */
+    public function findOneBy(array $criteria)
+    {
+        $query = "SELECT * FROM {$this->table} WHERE {$this->buildFieldQuery($criteria)}";
+
+        return $this->fetchOrFail($query, $criteria);
     }
 
     /**
@@ -180,6 +202,39 @@ class Repository
     public function getPdo(): PDO
     {
         return $this->pdo;
+    }
+
+    /**
+     * Permet de recupere le premier element
+     *
+     * @param string $query
+     * @param array $criteria
+     * @throws NotFoundException
+     * @return mixed
+     */
+    protected function fetchOrFail(string $query, array $criteria = [])
+    {
+        $statement = $this->pdo->prepare($query);
+        $statement->execute($criteria);
+
+        if ($this->entity) {
+            $statement->setFetchMode(PDO::FETCH_CLASS, $this->entity);
+        } else {
+            $statement->setFetchMode(PDO::FETCH_OBJ);
+        }
+        $record = $statement->fetch();
+
+        if ($record === false) {
+            $message = 'Not found entity with ';
+            foreach ($criteria as $field => $value) {
+                $message .= sprintf('%s : %s', $field, $value);
+            }
+            throw new NotFoundException(
+                $message
+            );
+        }
+
+        return $record;
     }
 
     private function buildFieldQuery(array $data): string
