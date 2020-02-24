@@ -179,6 +179,16 @@ class Repository
         return $statement->fetchColumn() !== false;
     }
 
+    /**
+     * Recupere le nombre d'éléments
+     *
+     * @return int
+     */
+    public function count(): int
+    {
+        return $this->fetchColumn("SELECT COUNT(id) FROM {$this->table}");
+    }
+
 
     /**
      * @return string
@@ -237,12 +247,31 @@ class Repository
         return $record;
     }
 
-    private function buildFieldQuery(array $data): string
+    /**
+     * Recupere la premiere colonne
+     *
+     * @param string $query
+     * @param array $criteria
+     * @return mixed
+     */
+    protected function fetchColumn(string $query, array $criteria = [])
     {
-        $arrayData =  array_map(function ($key) {
-            return "$key=:$key";
-        }, array_keys($data));
+        $statement = $this->pdo->prepare($query);
+        $statement->execute($criteria);
+        if ($this->entity) {
+            $statement->setFetchMode(PDO::FETCH_CLASS, $this->entity);
+        } else {
+            $statement->setFetchMode(PDO::FETCH_OBJ);
+        }
+        return $statement->fetchColumn();
+    }
 
-        return join(', ', $arrayData);
+    private function buildFieldQuery(array $criteria): string
+    {
+        $fields =  array_map(function ($key) {
+            return "$key=:$key";
+        }, array_keys($criteria));
+
+        return join(', ', $fields);
     }
 }

@@ -8,6 +8,9 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use function is_string;
+use function is_null;
+use function is_array;
 
 class App
 {
@@ -62,7 +65,7 @@ class App
         $route = $router->match($request);
 
         //TODO case : request doesn't match, return Response 404
-        if (\is_null($route)) {
+        if (is_null($route)) {
             return new Response(404, [], '<h1>Erreur 404</h1>');
         }
 
@@ -113,11 +116,13 @@ class App
      */
     private function initCallback($callback, ServerRequestInterface $request)
     {
-        if (\is_string($callback)) {
+        //TODO method __invoke
+        if (is_string($callback)) {
             return call_user_func_array($this->container->get($callback), [$request]);
         }
 
-        if (\is_array($callback) && \is_string($callback[0])) {
+        //TODO named method
+        if (is_array($callback) && is_string($callback[0])) {
             $object = $this->container->get($callback[0]);
             $method = $callback[1];
             if (method_exists($object, $method)) {

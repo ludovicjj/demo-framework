@@ -3,19 +3,30 @@
 namespace App\Admin;
 
 use App\Admin\Actions\CategoryCrudAction;
+use App\Admin\Actions\DashboardAction;
 use App\Admin\Actions\PostCrudAction;
+use App\Admin\Twig\AdminMenuExtension;
 use Framework\Module;
+use Framework\Renderer\RendererInterface;
+use Framework\Renderer\TwigRenderer;
 use Framework\Router\Router;
-use Psr\Container\ContainerInterface;
 
 class AdminModule extends Module
 {
     const DEFINITIONS = __DIR__.'/config.php';
 
-    public function __construct(ContainerInterface $container)
-    {
-        $router = $container->get(Router::class);
-        $adminPrefix = $container->get('admin.prefix');
+    public function __construct(
+        RendererInterface $renderer,
+        Router $router,
+        string $adminPrefix,
+        AdminMenuExtension $adminMenuExtension
+    ) {
+        //TODO add route to dashboard
+        $router->get(
+            $adminPrefix,
+            [DashboardAction::class, 'dashboard'],
+            'admin.dashboard'
+        );
 
         //TODO Register all routes to posts CRUD
         $router->crud(
@@ -30,5 +41,10 @@ class AdminModule extends Module
             CategoryCrudAction::class,
             'admin.categories'
         );
+
+        //TODO add extension when twig is initialized to avoid circular dependency
+        if ($renderer instanceof TwigRenderer) {
+            $renderer->getTwig()->addExtension($adminMenuExtension);
+        }
     }
 }

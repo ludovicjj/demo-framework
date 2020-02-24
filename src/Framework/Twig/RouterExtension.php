@@ -22,7 +22,8 @@ class RouterExtension extends AbstractExtension
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('path', [$this, 'path'])
+            new TwigFunction('path', [$this, 'path']),
+            new TwigFunction('is_subpath', [$this, 'isSubPath']),
         ];
     }
 
@@ -34,5 +35,22 @@ class RouterExtension extends AbstractExtension
     public function path(string $name, array $parameters = []): ?string
     {
         return $this->router->generateUri($name, $parameters);
+    }
+
+    /**
+     * Detecte si la l'uri current est un enfant de l'uri parent
+     *
+     * @param string $routeName
+     * @return bool
+     */
+    public function isSubPath(string $routeName): bool
+    {
+        $currentUri = $_SERVER['REQUEST_URI'] ?? '/';
+        $expectedUri = $this->router->generateUri($routeName);
+
+        if (strpos($currentUri, $expectedUri, 0) !== false) {
+            return true;
+        }
+        return false;
     }
 }

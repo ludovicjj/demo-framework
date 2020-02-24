@@ -1,0 +1,9 @@
+<div class="col-sm-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{ count }}</h5>
+            <h5 class="card-title">Catégorie{% if count > 1 %}s{% endif %}</h5>
+            <a href="{{ path('admin.categories.index') }}" class="btn btn-primary">Gérer les catégories</a>
+        </div>
+    </div>
+</div>
