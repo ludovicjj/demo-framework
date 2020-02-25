@@ -8,77 +8,103 @@ use GuzzleHttp\Psr7\Response;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use DI\ContainerBuilder;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use function is_string;
 use function is_null;
 use function is_array;
+use Exception;
 
-class App
+class App implements RequestHandlerInterface
 {
-    /** @var array */
+    /**
+     * Contient la liste des modules
+     *
+     * @var string[] $modules
+     */
     private $modules = [];
 
-    /** @var ContainerInterface */
+    /**
+     * @var ContainerInterface|null $container
+     */
     private $container;
 
     /**
-     * App constructor.
-     * @param ContainerInterface $container
-     * @param array $modules
+     * Contient la definition principale pour PHPDI
+     *
+     * @var string $definition
      */
+    private $definition;
+
+    /**
+     * @var string[] $middlewares
+     */
+    private $middlewares = [];
+
+    private $index = 0;
+
     public function __construct(
-        ContainerInterface $container,
-        array $modules = []
+        string $definition
     ) {
-        $this->container = $container;
-        foreach ($modules as $module) {
-            $this->modules[] = $container->get($module);
+        $this->definition = $definition;
+    }
+
+    /**
+     * Ajoute un module à app
+     *
+     * @param string $module
+     * @return $this
+     */
+    public function addModule(string $module): self
+    {
+        $this->modules[] = $module;
+
+        return $this;
+    }
+
+    /**
+     * Ajoute un middleware à app
+     *
+     * @param string $middleware
+     * @return $this
+     */
+    public function pipe(string $middleware)
+    {
+        $this->middlewares[] = $middleware;
+
+        return $this;
+    }
+
+    /**
+     * @param ServerRequestInterface $request
+     * @return ResponseInterface
+     * @throws Exception
+     */
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        $middleware = $this->getMiddleware();
+        if (!is_null($middleware) && $middleware instanceof MiddlewareInterface) {
+            return $middleware->process($request, $this);
+        } else {
+            throw new Exception('Middleware unable to handle this request');
         }
     }
 
     /**
      * @param ServerRequestInterface $request
      * @return ResponseInterface
-     * @throws \Exception
+     * @throws Exception
      */
     public function run(ServerRequestInterface $request): ResponseInterface
     {
-        $uri = $request->getUri()->getPath();
-
-        //TODO update request method if key "_method" exist
-        $parseBody = $request->getParsedBody();
-        if (array_key_exists('_method', $parseBody) &&
-            in_array($parseBody['_method'], ['DELETE', 'PUT'])
-        ) {
-            $request = $request->withMethod($parseBody['_method']);
+        //TODO initialize les different modules
+        foreach ($this->modules as $module) {
+            $this->getContainer()->get($module);
         }
+        return $this->handle($request);
 
-        //TODO case : trailingSlash
-        if (!empty($uri) && $uri !== '/' && $uri[-1] === '/') {
-            return (new Response())
-                ->withStatus(301)
-                ->withHeader('Location', substr($uri, 0, -1))
-            ;
-        }
-
-        //TODO recuperation du router via le container
-        $router = $this->container->get(Router::class);
-        $route = $router->match($request);
-
-        //TODO case : request doesn't match, return Response 404
-        if (is_null($route)) {
-            return new Response(404, [], '<h1>Erreur 404</h1>');
-        }
-
-        //TODO case : hydrate la requete avec les parametres de la route
-        $parameters = $route->getParameters();
-        $request = array_reduce(
-            array_keys($parameters),
-            function (ServerRequestInterface $request, $key) use ($parameters) {
-                return $request->withAttribute($key, $parameters[$key]);
-            },
-            $request
-        );
-
+        /*
         //TODO initialise la class et lance la method.
         try {
             $response = $this->initCallback($route->getCallback(), $request);
@@ -96,8 +122,9 @@ class App
         } elseif ($response instanceof ResponseInterface) {
             return $response;
         } else {
-            throw new \Exception('Response must be string or instance of ResponseInterface');
+            throw new Exception('Response must be string or instance of ResponseInterface');
         }
+        */
     }
 
     /**
@@ -105,38 +132,43 @@ class App
      */
     public function getContainer(): ContainerInterface
     {
+        if ($this->container === null) {
+            $builder = new ContainerBuilder();
+            $builder->addDefinitions($this->definition);
+
+            /** @var string $module */
+            foreach ($this->modules as $module) {
+                if (!is_null(constant($module.'::DEFINITIONS'))) {
+                    $builder->addDefinitions(constant($module.'::DEFINITIONS'));
+                }
+            }
+
+            try {
+                $this->container = $builder->build();
+            } catch (Exception $e) {
+                $e->getMessage();
+            }
+            return $this->container;
+        }
+
         return $this->container;
     }
 
     /**
-     * @param mixed $callback
-     * @param ServerRequestInterface $request
-     * @return string|ResponseInterface
-     * @throws \Exception
+     * @return MiddlewareInterface|null
      */
-    private function initCallback($callback, ServerRequestInterface $request)
+    private function getMiddleware(): ?MiddlewareInterface
     {
-        //TODO method __invoke
-        if (is_string($callback)) {
-            return call_user_func_array($this->container->get($callback), [$request]);
+        if (array_key_exists($this->index, $this->middlewares)) {
+            if (is_string($this->middlewares[$this->index])) {
+                $middleware = $this->container->get($this->middlewares[$this->index]);
+            } else {
+                $middleware = $this->middlewares[$this->index];
+            }
+            $this->index++;
+            return $middleware;
         }
 
-        //TODO named method
-        if (is_array($callback) && is_string($callback[0])) {
-            $object = $this->container->get($callback[0]);
-            $method = $callback[1];
-            if (method_exists($object, $method)) {
-                return call_user_func_array([$object, $method], [$request]);
-            } else {
-                throw new \Exception(
-                    sprintf(
-                        'Method %s() doesn\'t exist in class name : %s',
-                        $method,
-                        get_class($object)
-                    )
-                );
-            }
-        }
-        return call_user_func_array($callback, [$request]);
+        return null;
     }
 }

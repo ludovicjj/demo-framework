@@ -2,6 +2,11 @@
 
 use App\Admin\AdminModule;
 use App\Blog\BlogModule;
+use Framework\Middleware\NotFoundMiddleware;
+use Framework\Middleware\TrailingSlashMiddleware;
+use Framework\Middleware\MethodMiddleware;
+use Framework\Middleware\RouterMiddleware;
+use Framework\Middleware\DispatcherMiddleware;
 use Framework\App;
 use GuzzleHttp\Psr7\ServerRequest;
 use function Http\Response\send;
@@ -13,19 +18,14 @@ $modules = [
     BlogModule::class
 ];
 
-$builder = new \DI\ContainerBuilder();
-$builder->addDefinitions(dirname(__DIR__).'/config/config.php');
-foreach ($modules as $module) {
-    if (!\is_null($module::DEFINITIONS)) {
-        $builder->addDefinitions($module::DEFINITIONS);
-    }
-}
-$container = $builder->build();
-
-$app = new App(
-    $container,
-    $modules
-);
+$app = (new App(dirname(__DIR__).'/config/config.php'))
+    ->addModule(AdminModule::class)
+    ->addModule(BlogModule::class)
+    ->pipe(TrailingSlashMiddleware::class)
+    ->pipe(MethodMiddleware::class)
+    ->pipe(RouterMiddleware::class)
+    ->pipe(DispatcherMiddleware::class)
+    ->pipe(NotFoundMiddleware::class);
 
 if (php_sapi_name() !== 'cli') {
     $response = $app->run(ServerRequest::fromGlobals());
