@@ -16,6 +16,7 @@
             </tr>
         </thead>
         <tbody>
+        {% set csrf_token = csrf_input() %}
         {% for item in items %}
             {% set rows = rows + 1 %}
             <tr>
@@ -28,6 +29,7 @@
                     </a>
                     <form action="{{ path('admin.posts.delete', {'id': item.id}) }}" method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr ?');">
                         <input type="hidden" name="_method" value="DELETE">
+                        {{ csrf_token | raw }}
                         <button class="btn btn-danger">Supprimer</button>
                     </form>
                 </td>

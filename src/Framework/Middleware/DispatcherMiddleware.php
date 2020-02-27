@@ -35,22 +35,18 @@ class DispatcherMiddleware implements MiddlewareInterface
 
         //TODO case : route match
         if (!is_null($route)) {
-            try {
-                $response = $this->initCallback($route->getCallback(), $request);
+            $response = $this->initCallback($route->getCallback(), $request);
 
-                //TODO case : Vérifie le type de la response
-                if (is_string($response)) {
-                    return new Response(200, [], $response);
-                } elseif ($response instanceof ResponseInterface) {
-                    return $response;
-                } else {
-                    throw new Exception('Response must be string or instance of ResponseInterface');
-                }
-            } catch (Exception $e) {
-                return $handler->handle($request);
+            //TODO case : Vérifie le type de la response
+            if (is_string($response)) {
+                return new Response(200, [], $response);
+            } elseif ($response instanceof ResponseInterface) {
+                return $response;
+            } else {
+                throw new Exception('Response must be string or instance of ResponseInterface');
             }
         }
-        //TODO case : route doesn't match, go to next middleware
+        //TODO case : route doesn't match, go to next middleware (NotFoundMiddleware)
         return $handler->handle($request);
     }
 

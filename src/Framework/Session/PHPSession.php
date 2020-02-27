@@ -2,7 +2,9 @@
 
 namespace Framework\Session;
 
-class PHPSession implements SessionInterface
+use ArrayAccess;
+
+class PHPSession implements SessionInterface, ArrayAccess
 {
     /**
      * Recupere une information en session
@@ -54,5 +56,41 @@ class PHPSession implements SessionInterface
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
+    }
+
+    /**
+     * @param mixed $offset
+     * @return bool
+     */
+    public function offsetExists($offset): bool
+    {
+        $this->ensureSession();
+        return (array_key_exists($offset, $_SESSION));
+    }
+
+    /**
+     * @param mixed $offset
+     * @return mixed
+     */
+    public function offsetGet($offset)
+    {
+        return $this->get($offset);
+    }
+
+    /**
+     * @param mixed $offset
+     * @param mixed $value
+     */
+    public function offsetSet($offset, $value): void
+    {
+        $this->set($offset, $value);
+    }
+
+    /**
+     * @param mixed $offset
+     */
+    public function offsetUnset($offset): void
+    {
+        $this->delete($offset);
     }
 }

@@ -1,9 +1,11 @@
 <?php
 
+use Framework\Middleware\CsrfMiddleware;
 use Framework\Renderer\RendererInterface;
 use Framework\Renderer\TwigRendererFactory;
 use Framework\Session\PHPSession;
 use Framework\Session\SessionInterface;
+use Framework\Twig\CsrfExtension;
 use Framework\Twig\FlashExtension;
 use Framework\Twig\FormExtension;
 use Framework\Twig\PaginationExtension;
@@ -11,9 +13,11 @@ use Framework\Twig\RouterExtension;
 use Framework\Twig\TextExtension;
 use Framework\Twig\TimeExtension;
 use Framework\Router\Router;
+use Psr\Container\ContainerInterface;
 use function DI\create;
 use function DI\factory;
 use function DI\get;
+use function DI\autowire;
 
 return [
     'database.host' => 'localhost',
@@ -29,12 +33,14 @@ return [
         get(TextExtension::class),
         get(TimeExtension::class),
         get(FlashExtension::class),
-        get(FormExtension::class)
+        get(FormExtension::class),
+        get(CsrfExtension::class)
     ],
     Router::class => create(),
     SessionInterface::class => create(PHPSession::class),
     RendererInterface::class => factory(TwigRendererFactory::class),
-    PDO::class => function (\Psr\Container\ContainerInterface $container) {
+    CsrfMiddleware::class => autowire()->constructorParameter('session', get(SessionInterface::class)),
+    PDO::class => function (ContainerInterface $container) {
         $dsn = 'mysql:dbname='. $container->get('database.name');
         $dsn .= ';host='. $container->get('database.host');
         $dsn .= ';charset=' . $container->get('database.charset');
