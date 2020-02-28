@@ -2,9 +2,6 @@
 
 namespace Framework;
 
-use Framework\Exceptions\NotFoundException;
-use Framework\Router\Router;
-use GuzzleHttp\Psr7\Response;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -13,7 +10,6 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use function is_string;
 use function is_null;
-use function is_array;
 use Exception;
 
 class App implements RequestHandlerInterface
@@ -103,28 +99,6 @@ class App implements RequestHandlerInterface
             $this->getContainer()->get($module);
         }
         return $this->handle($request);
-
-        /*
-        //TODO initialise la class et lance la method.
-        try {
-            $response = $this->initCallback($route->getCallback(), $request);
-        } catch (NotFoundException $notFoundException) {
-            return new Response(
-                404,
-                [],
-                '<h1>Erreur 404</h1><p>'. $notFoundException->getMessage() .'</p>'
-            );
-        }
-
-        //TODO case : Vérifie le type de la response
-        if (is_string($response)) {
-            return new Response(200, [], $response);
-        } elseif ($response instanceof ResponseInterface) {
-            return $response;
-        } else {
-            throw new Exception('Response must be string or instance of ResponseInterface');
-        }
-        */
     }
 
     /**
@@ -132,8 +106,16 @@ class App implements RequestHandlerInterface
      */
     public function getContainer(): ContainerInterface
     {
+
         if ($this->container === null) {
             $builder = new ContainerBuilder();
+
+            $env = getenv('ENV') ?: 'prod';
+            var_dump($env);
+            if ($env === 'prod') {
+                $builder->enableCompilation('tmp/di');
+                $builder->writeProxiesToFile(true, 'tmp/proxies');
+            }
             $builder->addDefinitions($this->definition);
 
             /** @var string $module */

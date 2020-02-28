@@ -3,6 +3,7 @@
 use Framework\Middleware\CsrfMiddleware;
 use Framework\Renderer\RendererInterface;
 use Framework\Renderer\TwigRendererFactory;
+use Framework\Router\RouterFactory;
 use Framework\Session\PHPSession;
 use Framework\Session\SessionInterface;
 use Framework\Twig\CsrfExtension;
@@ -20,6 +21,7 @@ use function DI\get;
 use function DI\autowire;
 
 return [
+    'env' => \DI\env('ENV', 'prod'),
     'database.host' => 'localhost',
     'database.name' => 'jj_demoframework',
     'database.user' => 'root',
@@ -36,7 +38,7 @@ return [
         get(FormExtension::class),
         get(CsrfExtension::class)
     ],
-    Router::class => create(),
+    Router::class => factory(RouterFactory::class),
     SessionInterface::class => create(PHPSession::class),
     RendererInterface::class => factory(TwigRendererFactory::class),
     CsrfMiddleware::class => autowire()->constructorParameter('session', get(SessionInterface::class)),
