@@ -111,7 +111,7 @@ class App implements RequestHandlerInterface
             $builder = new ContainerBuilder();
 
             $env = getenv('ENV') ?: 'prod';
-            var_dump($env);
+
             if ($env === 'prod') {
                 $builder->enableCompilation('tmp/di');
                 $builder->writeProxiesToFile(true, 'tmp/proxies');
